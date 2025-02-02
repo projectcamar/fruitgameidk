@@ -1,0 +1,2145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple FPS Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+        body { 
+            margin: 0; 
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        #info { position: absolute; top: 10px; left: 10px; color: white; }
+        #gameOverScreen {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(2, 6, 23, 0.95);
+            padding: 40px;
+            border-radius: 16px;
+            color: white;
+            text-align: center;
+            z-index: 1000;
+            min-width: 320px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        #gameOverScreen h1 {
+            color: #ef4444;
+            margin-bottom: 24px;
+            font-size: 36px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        #gameOverScreen p {
+            margin: 12px 0;
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        #gameOverScreen button {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 24px;
+            transition: all 0.2s ease;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.5);
+        }
+        #gameOverScreen button:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px -1px rgba(239, 68, 68, 0.6);
+        }
+        #gameOverScreen button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px -1px rgba(239, 68, 68, 0.4);
+        }
+        .hud-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            z-index: 1000;
+            gap: 24px;
+        }
+        .hud-left, .hud-right {
+            background: rgba(2, 6, 23, 0.85);
+            padding: 20px;
+            border-radius: 12px;
+            min-width: 280px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .stat-bar {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+        .stat-label {
+            color: rgba(255, 255, 255, 0.7);
+            width: 100px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .stat-value {
+            color: #fff;
+            margin-left: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            min-width: 60px;
+            text-align: right;
+        }
+        .health-bar, .boss-health-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+        .health-fill, .boss-health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #f87171);
+            transition: width 0.3s ease;
+            border-radius: 999px;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+        .multiplier-container {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            background: rgba(2, 6, 23, 0.85);
+            padding: 16px;
+            border-radius: 12px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            min-width: 240px;
+        }
+        .multiplier-container .stat-bar {
+            margin: 4px 0;
+        }
+        .multiplier-container .stat-label {
+            width: 90px;
+            font-size: 13px;
+        }
+        .multiplier-container .stat-value {
+            font-size: 14px;
+        }
+        .notification {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(239, 68, 68, 0.95);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            z-index: 1000;
+            animation: fadeInOut 2s forwards;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        @keyframes fadeInOut {
+            0% { 
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            15% { 
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            85% { 
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            100% { 
+                opacity: 0;
+                transform: translate(-50%, -40%);
+            }
+        }
+        .stat-value[id$="MultiplierValue"],
+        .stat-value[id$="CountValue"] {
+            transition: color 0.3s ease;
+        }
+        .stat-value[id$="MultiplierValue"].active,
+        .stat-value[id$="CountValue"].active {
+            color: #4ade80;
+            text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+        }
+        .volume-control {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(2, 6, 23, 0.85);
+            padding: 16px;
+            border-radius: 12px;
+            color: white;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .volume-control label {
+            font-size: 14px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .volume-control input[type="range"] {
+            -webkit-appearance: none;
+            width: 120px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 999px;
+            outline: none;
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #ef4444;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+        }
+        .volume-control input[type="range"]::-webkit-slider-thumb:hover {
+            background: #dc2626;
+            transform: scale(1.1);
+        }
+        #volumeValue {
+            font-size: 14px;
+            font-weight: 600;
+            min-width: 48px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="hud-container">
+        <div class="hud-left">
+            <div class="stat-bar">
+                <div class="stat-label">HEALTH</div>
+                <div class="health-bar">
+                    <div class="health-fill" id="healthFill"></div>
+                </div>
+                <div class="stat-value" id="healthValue">100</div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-label">SCORE</div>
+                <div class="stat-value" id="scoreValue">0</div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-label">TIME</div>
+                <div class="stat-value" id="timeValue">0:00</div>
+            </div>
+        </div>
+        <div class="hud-right">
+            <div class="stat-bar">
+                <div class="stat-label">FPS</div>
+                <div class="stat-value" id="fpsValue">60</div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-label">ENEMIES</div>
+                <div class="stat-value" id="enemyCount">0</div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-label">DIFFICULTY</div>
+                <div class="stat-value" id="difficultyValue">100%</div>
+            </div>
+        </div>
+    </div>
+    <div class="multiplier-container">
+        <div class="stat-bar">
+            <div class="stat-label">SPEED</div>
+            <div class="stat-value" id="speedMultiplierValue">1.0x</div>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-label">FIRE RATE</div>
+            <div class="stat-value" id="fireRateMultiplierValue">1.0x</div>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-label">DAMAGE</div>
+            <div class="stat-value" id="damageMultiplierValue">1.0x</div>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-label">SHOTS</div>
+            <div class="stat-value" id="shotCountValue">1x</div>
+        </div>
+        <div class="stat-bar">
+            <div class="stat-label">TARGETS</div>
+            <div class="stat-value" id="targetCountValue">1x</div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
+    <script>
+        let camera, scene, renderer;
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let score = 0, health = 100;
+        const enemies = [];
+        const bullets = [];
+        const SPEED = 0.1;
+        let isJumping = false;
+        let isSprinting = false;
+        let velocity = 0;
+        const GRAVITY = 0.01;
+        const NORMAL_SPEED = 0.3;
+        const SPRINT_SPEED = 0.6;
+        let playerHelicopter;
+        const BOARD_SIZE = 200; // Size of the floor/playing area
+        const HALF_BOARD = BOARD_SIZE / 2;
+        const HELICOPTER_SIZE = 2.5; // Approximate size of helicopter for boundary checking
+        const TRAIL_LENGTH = 20; // Number of trail particles
+        const TRAIL_DISTANCE = 3; // Distance behind helicopter
+        const trailParticles = [];
+        const POWERUP_TYPES = {
+            SPEED: { color: 0x00ff00, increment: 0.2 },
+            FIRERATE: { color: 0x0000ff, increment: 0.25 },
+            DOUBLESHOT: { color: 0xffff00, increment: 1 },
+            MULTISHOT: { color: 0xff00ff, increment: 1 },
+            DAMAGE: { color: 0xff6b00, increment: 0.5 }
+        };
+        const FRUIT_TYPES = {
+            BANANA: {
+                color: 0xFFE135,
+                scale: 1.0,
+                healthMultiplier: 0.8,
+                speedMultiplier: 1.2
+            },
+            APPLE: {
+                color: 0xFF0000,
+                scale: 0.9,
+                healthMultiplier: 1.0,
+                speedMultiplier: 1.0
+            },
+            WATERMELON: {
+                color: 0x008000,
+                scale: 1.5,
+                healthMultiplier: 1.5,
+                speedMultiplier: 0.7
+            },
+            ORANGE: {
+                color: 0xFFA500,
+                scale: 0.8,
+                healthMultiplier: 0.9,
+                speedMultiplier: 1.1
+            },
+            STRAWBERRY: {
+                color: 0xFF3030,
+                scale: 0.7,
+                healthMultiplier: 0.7,
+                speedMultiplier: 1.3
+            },
+            PINEAPPLE: {
+                color: 0xFFD700,
+                scale: 1.2,
+                healthMultiplier: 1.2,
+                speedMultiplier: 0.9
+            }
+        };
+        const powerups = [];
+        let fireRate = 1000; // 1 shot per second
+        let lastFireTime = 0;
+        let bulletDamage = 50;
+        let powerupEffects = {
+            speedMultiplier: 1.0,
+            fireRateMultiplier: 1.0,
+            shotCount: 1,
+            targetCount: 1,
+            damageMultiplier: 1.0
+        };
+        const BULLET_SPEED = 1;
+        let isMouseDown = false;
+        let baseSpeed = 0.3;  // Starting speed
+        let speedIncrement = 0.2;  // Speed increase per power-up
+        let currentSpeedMultiplier = 1.0;  // Track total speed multiplier
+        let gameTimer = 0;
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fps = 60;
+        let lastFpsUpdate = 0;
+        let difficultyMultiplier = 1.0;
+        let isGameOver = false;
+        const SOUNDS = {
+            powerup: new Audio('https://cdn.freesound.org/previews/162/162476_311243-lq.mp3'),  // Powerup sound by Leszek_Szary
+            shoot: new Audio('https://opengameart.org/sites/default/files/laser1.mp3'),         // By dklon
+            hit: new Audio('https://cdn.freesound.org/previews/131/131657_2398403-lq.mp3'),    // Hit sound by dermotte
+            explosion: new Audio('https://opengameart.org/sites/default/files/hit.mp3')         // Explosion (shortened)
+        };
+
+        // Initialize sound settings
+        Object.values(SOUNDS).forEach(sound => {
+            sound.volume = 0.3; // Set default volume to 30%
+        });
+
+        // Modify the playSound function to handle the explosion duration
+        function playSound(soundName) {
+            const sound = SOUNDS[soundName];
+            if (sound) {
+                const soundClone = sound.cloneNode();
+                if (soundName === 'explosion') {
+                    soundClone.addEventListener('timeupdate', function() {
+                        if (this.currentTime > 1) {
+                            this.pause();
+                            this.currentTime = 0;
+                        }
+                    });
+                }
+                soundClone.play().catch(e => console.log("Sound play failed:", e));
+            }
+        }
+
+        // Add after other global variables
+        let canSprint = true;
+        let sprintCooldown = 10000; // 10 seconds in milliseconds
+        let sprintDuration = 3000; // 3 seconds in milliseconds
+        let isSprintActive = false;
+        let sprintEndTime = 0;
+        let sprintCooldownEndTime = 0;
+        let bossSpawned = {
+            banana: false,
+            apple: false,
+            watermelon: false
+        };
+        let warningShown = {
+            banana: false,
+            apple: false,
+            watermelon: false
+        };
+
+        // Update BOSS_CONFIG to include special move parameters
+        const BOSS_CONFIG = {
+            GIANT_BANANA: {
+                scale: 5.0,
+                health: 10000,
+                spawnCount: 100,
+                spawnInterval: 10000,
+                baseSpeed: 0.300,
+                orbitRadius: 30,
+                orbitSpeed: 0.02,
+                powerupCount: 30,
+                specialMove: {
+                    name: 'Banana Boomerang',
+                    cooldown: 12000,
+                    projectileSpeed: 0.8,
+                    damage: 10
+                }
+            },
+            GIANT_APPLE: {
+                scale: 6.0,
+                health: 15000,
+                spawnCount: 120,
+                spawnInterval: 9000,
+                baseSpeed: 0.35,
+                orbitRadius: 35,
+                orbitSpeed: 0.025,
+                powerupCount: 40,
+                specialMove: {
+                    name: 'Apple Explosion',
+                    cooldown: 12000,
+                    radius: 30,
+                    damage: 15
+                }
+            },
+            GIANT_WATERMELON: {
+                scale: 7.0,
+                health: 200000,
+                spawnCount: 150,
+                spawnInterval: 8000,
+                baseSpeed: 0.375,
+                orbitRadius: 40,
+                orbitSpeed: 0.03,
+                powerupCount: 50,
+                specialMove: {
+                    name: 'Seed Barrage',
+                    cooldown: 10000,
+                    projectileCount: 24,
+                    damage: 20
+                }
+            }
+        };
+
+        function animate() {
+            if (isGameOver) return;
+            
+            const currentTime = performance.now();
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            // Update game timer regardless of player actions
+            gameTimer += deltaTime;
+            
+            // Calculate FPS
+            frameCount++;
+            if (currentTime - lastFpsUpdate >= 1000) {
+                fps = Math.round(frameCount * 1000 / (currentTime - lastFpsUpdate));
+                frameCount = 0;
+                lastFpsUpdate = currentTime;
+            }
+            
+            requestAnimationFrame(animate);
+            updatePlayer();
+            updateEnemies();
+            updateBullets();
+            checkCollisions();
+            updateTrail();
+            updateInfoDisplay();
+            
+            // Handle manual shooting with updated fire rate
+            if (isMouseDown) {
+                const actualFireRate = fireRate / powerupEffects.fireRateMultiplier;
+                if (currentTime - lastFireTime >= actualFireRate) {
+                    shoot();
+                    lastFireTime = currentTime;
+                }
+            }
+            
+            // Animate power-ups
+            powerups.forEach(powerup => {
+                powerup.rotation.y += 0.02;
+                powerup.position.y = 2 + Math.sin(Date.now() * 0.003) * 0.3;
+            });
+            
+            renderer.render(scene, camera);
+        }
+
+        // Modify handleSprint to not rely on updatePlayer calls
+        function handleSprint() {
+            const currentTime = performance.now();
+            
+            // Update sprint status
+            if (isSprintActive && currentTime > sprintEndTime) {
+                isSprintActive = false;
+                sprintCooldownEndTime = currentTime + sprintCooldown;
+            }
+            
+            // Update cooldown status
+            if (!canSprint && currentTime > sprintCooldownEndTime) {
+                canSprint = true;
+            }
+            
+            // Activate sprint if conditions are met
+            if (isSprinting && canSprint && !isSprintActive) {
+                isSprintActive = true;
+                canSprint = false;
+                sprintEndTime = currentTime + sprintDuration;
+            }
+            
+            return isSprintActive ? 2.0 : 1.0;
+        }
+
+        init();
+        animate();
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 40, 0);
+            camera.lookAt(0, 0, 0);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(0, 10, 0);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            // Floor with texture
+            const textureLoader = new THREE.TextureLoader();
+            const floorTexture = textureLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg', () => {
+                renderer.render(scene, camera);
+            });
+            
+            // Make the texture repeat
+            floorTexture.wrapS = THREE.RepeatWrapping;
+            floorTexture.wrapT = THREE.RepeatWrapping;
+            floorTexture.repeat.set(50, 50); // Adjust the repeat value to change texture density
+            
+            const floorGeometry = new THREE.PlaneGeometry(200, 200, 50, 50);
+            const floorMaterial = new THREE.MeshPhongMaterial({ 
+                map: floorTexture,
+                side: THREE.DoubleSide,
+                shininess: 30
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+
+            // Add skybox
+            createSkybox();
+
+            // Create helicopter (player) with enhanced detail
+            const helicopterGeometry = new THREE.Group();
+            
+            // Helicopter body with more segments
+            const bodyGeometry = new THREE.BoxGeometry(2, 0.7, 3, 12, 12, 12);
+            const bodyMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x404040,
+                flatShading: false // Smooth shading
+            });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            
+            // Main rotor with more detail
+            const rotorGeometry = new THREE.BoxGeometry(5, 0.1, 0.3, 20, 4, 4);
+            const rotorMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x808080,
+                flatShading: false
+            });
+            const mainRotor = new THREE.Mesh(rotorGeometry, rotorMaterial);
+            mainRotor.position.y = 0.5;
+            
+            // Add tail boom
+            const tailBoomGeometry = new THREE.CylinderGeometry(0.15, 0.15, 2, 16, 8);
+            const tailBoom = new THREE.Mesh(tailBoomGeometry, bodyMaterial);
+            tailBoom.rotation.z = Math.PI / 2;
+            tailBoom.position.z = -2;
+            
+            // Add tail rotor
+            const tailRotorGeometry = new THREE.BoxGeometry(1, 0.05, 0.2, 8, 2, 2);
+            const tailRotor = new THREE.Mesh(tailRotorGeometry, rotorMaterial);
+            tailRotor.position.z = -3;
+            tailRotor.position.y = 0.5;
+            
+            helicopterGeometry.add(body);
+            helicopterGeometry.add(mainRotor);
+            helicopterGeometry.add(tailBoom);
+            helicopterGeometry.add(tailRotor);
+            
+            playerHelicopter = helicopterGeometry;
+            scene.add(playerHelicopter);
+
+            // Create trail after helicopter creation
+            createTrail();
+
+            // Spawn enemies
+            spawnEnemies(5);
+
+            // Spawn initial power-ups
+            createPowerup('SPEED');
+            createPowerup('FIRERATE');
+            createPowerup('DOUBLESHOT');
+            createPowerup('MULTISHOT');
+            createPowerup('DAMAGE');
+
+            // Controls
+            document.addEventListener('keydown', onKeyDown);
+            document.addEventListener('keyup', onKeyUp);
+            document.addEventListener('mousedown', () => isMouseDown = true);
+            document.addEventListener('mouseup', () => isMouseDown = false);
+            document.addEventListener('mousemove', onMouseMove);
+            document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock;
+            document.addEventListener('click', function() {
+                document.body.requestPointerLock();
+            });
+
+            // Window resize
+            window.addEventListener('resize', onWindowResize);
+
+            // Add visual boundaries
+            addBoundaryWalls();
+
+            // Update mouse controls
+            document.addEventListener('mousedown', () => isMouseDown = true);
+            document.addEventListener('mouseup', () => isMouseDown = false);
+
+            addGameOverStyles();
+            addGameOverScreen();
+
+            // Add volume control UI
+            const volumeControl = document.createElement('div');
+            volumeControl.className = 'volume-control';
+            volumeControl.innerHTML = `
+                <label for="volume">Sound Volume: </label>
+                <input type="range" id="volume" min="0" max="100" value="30">
+                <span id="volumeValue">30%</span>
+            `;
+            document.body.appendChild(volumeControl);
+
+            // Add volume control listener
+            document.getElementById('volume').addEventListener('input', (e) => {
+                const volume = e.target.value / 100;
+                Object.values(SOUNDS).forEach(sound => {
+                    sound.volume = volume;
+                });
+                document.getElementById('volumeValue').textContent = `${e.target.value}%`;
+            });
+        }
+
+        function createSkybox() {
+            const loader = new THREE.TextureLoader();
+            const skyboxGeometry = new THREE.BoxGeometry(2000, 2000, 2000);
+            
+            // Using a freely available sky texture from threejs examples
+            const texture = loader.load('https://threejs.org/examples/textures/2294472375_24a3b8ef46_o.jpg', () => {
+                renderer.render(scene, camera);
+            });
+            
+            const material = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.BackSide
+            });
+            
+            const skybox = new THREE.Mesh(skyboxGeometry, material);
+            scene.add(skybox);
+        }
+
+        function spawnEnemies(baseCount) {
+            // Calculate time-based difficulty tier (every 3 seconds)
+            const timeTier = Math.floor(gameTimer / 3);
+            
+            // Calculate difficulty multiplier: increases by 10% for each tier
+            difficultyMultiplier = 1.0 + (timeTier * 0.1);
+            
+            // Calculate dynamic enemy cap based on game phase
+            const EARLY_GAME_CAP = 150;  // 0-60 seconds
+            const MID_GAME_CAP = 300;    // 60-180 seconds
+            const LATE_GAME_CAP = 500;   // 180+ seconds
+            
+            let MAX_ENEMIES;
+            if (gameTimer < 60) {
+                MAX_ENEMIES = EARLY_GAME_CAP;
+            } else if (gameTimer < 180) {
+                MAX_ENEMIES = MID_GAME_CAP;
+            } else {
+                MAX_ENEMIES = LATE_GAME_CAP;
+            }
+            
+            const exponentialCount = Math.pow(2, Math.min(1 + Math.log2(timeTier + 1), 8));
+            const desiredEnemyCount = baseCount + Math.floor(exponentialCount);
+            const currentEnemyCount = enemies.length;
+            
+            const enemiesToSpawn = Math.min(
+                desiredEnemyCount,
+                MAX_ENEMIES - currentEnemyCount
+            );
+            
+            if (enemiesToSpawn <= 0) return;
+            
+            const powerUpCount = Object.values(powerupEffects).filter(active => active).length;
+            const baseHealth = 100;
+            const powerupBonus = powerUpCount * 50;
+            const difficultyBonus = Math.pow(difficultyMultiplier, 2) * 100;
+            
+            for (let i = 0; i < enemiesToSpawn; i++) {
+                // Randomly select a fruit type
+                const fruitTypes = Object.keys(FRUIT_TYPES);
+                const randomFruit = fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+                const fruitData = FRUIT_TYPES[randomFruit];
+                
+                // Create fruit geometry based on type
+                let geometry;
+                switch (randomFruit) {
+                    case 'BANANA':
+                        geometry = new THREE.TorusGeometry(0.5, 0.2, 8, 16, Math.PI);
+                        break;
+                    case 'APPLE':
+                        geometry = new THREE.SphereGeometry(0.5, 16, 16);
+                        break;
+                    case 'WATERMELON':
+                        geometry = new THREE.SphereGeometry(0.8, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.7);
+                        break;
+                    case 'ORANGE':
+                        geometry = new THREE.SphereGeometry(0.5, 16, 16);
+                        break;
+                    case 'STRAWBERRY':
+                        geometry = new THREE.ConeGeometry(0.4, 0.8, 16);
+                        break;
+                    case 'PINEAPPLE':
+                        geometry = new THREE.CylinderGeometry(0.3, 0.3, 1, 8);
+                        break;
+                }
+                
+                const material = new THREE.MeshPhongMaterial({ 
+                    color: fruitData.color,
+                    flatShading: false,
+                    specular: 0x444444,
+                    shininess: 30
+                });
+                
+                const enemy = new THREE.Mesh(geometry, material);
+                
+                // Scale the fruit according to its type
+                const baseScale = fruitData.scale;
+                enemy.scale.set(baseScale, baseScale, baseScale);
+                
+                // Random position with random height
+                const randomHeight = Math.random() * 30 + 5;
+                enemy.position.set(
+                    Math.random() * BOARD_SIZE - HALF_BOARD,
+                    randomHeight,
+                    Math.random() * BOARD_SIZE - HALF_BOARD
+                );
+                
+                // Set fruit-specific properties
+                const healthMultiplier = fruitData.healthMultiplier;
+                enemy.health = (baseHealth + powerupBonus + difficultyBonus) * healthMultiplier;
+                enemy.maxHealth = enemy.health;
+                enemy.fruitType = randomFruit;
+                enemy.speedFactor = fruitData.speedMultiplier * (Math.random() * 0.3 + 0.85); // Random speed variation
+                
+                // Add some rotation for visual interest
+                enemy.rotation.x = Math.random() * Math.PI;
+                enemy.rotation.y = Math.random() * Math.PI;
+                
+                scene.add(enemy);
+                enemies.push(enemy);
+            }
+        }
+
+        // Add this function to find the nearest enemies for targeting
+        function findTargets(position, maxTargets) {
+            // Sort enemies by distance to player
+            return enemies
+                .filter(enemy => !enemy.isBeingRemoved) // Only target active enemies
+                .map(enemy => ({
+                    enemy,
+                    distance: position.distanceTo(enemy.position)
+                }))
+                .sort((a, b) => a.distance - b.distance)
+                .slice(0, maxTargets)
+                .map(target => target.enemy);
+        }
+
+        // Modify the shoot function to implement auto-targeting
+        function shoot() {
+            if (isGameOver) return;
+            
+            playSound('shoot');
+            
+            const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+            const bulletMaterial = new THREE.MeshPhongMaterial({
+                color: 0x00ffff,
+                emissive: 0x00ffff,
+                emissiveIntensity: 0.5
+            });
+
+            // Get targets based on current powerup effects
+            const maxTargets = powerupEffects.targetCount * powerupEffects.shotCount;
+            const targets = findTargets(playerHelicopter.position, maxTargets);
+            
+            // If no targets found, shoot in player's facing direction
+            if (targets.length === 0) {
+                const direction = new THREE.Vector3(0, 0, -1);
+                direction.applyQuaternion(playerHelicopter.quaternion);
+                
+                for (let i = 0; i < powerupEffects.shotCount; i++) {
+                    const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+                    bullet.position.copy(playerHelicopter.position);
+                    
+                    // Add slight spread for multiple shots
+                    const spread = (powerupEffects.shotCount > 1) ? 
+                        (Math.random() - 0.5) * 0.2 : 0;
+                    
+                    const bulletDirection = direction.clone();
+                    bulletDirection.x += spread;
+                    bulletDirection.normalize();
+                    
+                    bullet.velocity = bulletDirection.multiplyScalar(2);
+                    bullet.damage = 100 * powerupEffects.damageMultiplier;
+                    
+                    scene.add(bullet);
+                    bullets.push({
+                        mesh: bullet,
+                        velocity: bullet.velocity,
+                        damage: bullet.damage
+                    });
+                }
+                return;
+            }
+
+            // Distribute shots among available targets
+            let shotIndex = 0;
+            for (let i = 0; i < powerupEffects.shotCount; i++) {
+                const target = targets[shotIndex % targets.length];
+                
+                const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
+                bullet.position.copy(playerHelicopter.position);
+                
+                // Calculate direction to target with slight prediction
+                const direction = new THREE.Vector3();
+                direction.subVectors(target.position, playerHelicopter.position);
+                
+                // Add slight spread for multiple shots
+                direction.x += (Math.random() - 0.5) * 0.1;
+                direction.y += (Math.random() - 0.5) * 0.1;
+                direction.z += (Math.random() - 0.5) * 0.1;
+                direction.normalize();
+                
+                bullet.velocity = direction.multiplyScalar(2);
+                bullet.damage = 100 * powerupEffects.damageMultiplier;
+                bullet.target = target; // Track target for homing
+                
+                scene.add(bullet);
+                bullets.push({
+                    mesh: bullet,
+                    velocity: bullet.velocity,
+                    damage: bullet.damage,
+                    target: target
+                });
+                
+                shotIndex++;
+            }
+        }
+
+        function onMouseMove(event) {
+            // Remove this function or leave empty as we don't need mouse look
+        }
+
+        function onKeyDown(event) {
+            switch(event.key.toLowerCase()) {
+                case 'w': moveForward = true; break;
+                case 's': moveBackward = true; break;
+                case 'a': moveLeft = true; break;
+                case 'd': moveRight = true; break;
+                case ' ': // Space key
+                    if (!isJumping) {
+                        isJumping = true;
+                        velocity = JUMP_FORCE;
+                    }
+                    break;
+                case 'shift': isSprinting = true; break;
+            }
+        }
+
+        function onKeyUp(event) {
+            switch(event.key.toLowerCase()) {
+                case 'w': moveForward = false; break;
+                case 's': moveBackward = false; break;
+                case 'a': moveLeft = false; break;
+                case 'd': moveRight = false; break;
+                case 'shift': isSprinting = false; break;
+            }
+        }
+
+        function updatePlayer() {
+            // Get sprint multiplier
+            const sprintMultiplier = handleSprint();
+            
+            // Calculate final speed with sprint
+            const currentSpeed = baseSpeed * powerupEffects.speedMultiplier * sprintMultiplier;
+            const nextPosition = playerHelicopter.position.clone();
+
+            if (moveForward) {
+                nextPosition.z -= currentSpeed;
+            }
+            if (moveBackward) {
+                nextPosition.z += currentSpeed;
+            }
+            if (moveLeft) {
+                nextPosition.x -= currentSpeed;
+            }
+            if (moveRight) {
+                nextPosition.x += currentSpeed;
+            }
+
+            // Check boundaries before applying movement
+            const margin = HELICOPTER_SIZE;
+            nextPosition.x = Math.max(-HALF_BOARD + margin, Math.min(HALF_BOARD - margin, nextPosition.x));
+            nextPosition.z = Math.max(-HALF_BOARD + margin, Math.min(HALF_BOARD - margin, nextPosition.z));
+            
+            // Apply the bounded position
+            playerHelicopter.position.copy(nextPosition);
+
+            // Update camera to follow helicopter
+            camera.position.x = playerHelicopter.position.x;
+            camera.position.z = playerHelicopter.position.z + 40;
+            camera.lookAt(playerHelicopter.position);
+
+            // Rotate helicopter rotors for effect
+            const mainRotor = playerHelicopter.children[1];
+            const tailRotor = playerHelicopter.children[3];
+            mainRotor.rotation.y += 0.2;
+            tailRotor.rotation.x += 0.3;
+        }
+
+        function updateEnemies() {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const enemy = enemies[i];
+                const helicopterPos = playerHelicopter.position.clone();
+                const enemyPos = enemy.position.clone();
+                
+                // Handle special move projectiles
+                if (enemy.isSpecialMove) {
+                    if (enemy.bossType === 'BANANA' || enemy.geometry instanceof THREE.TorusGeometry) {
+                        // Boomerang animation
+                        if (enemy.phase === 0) {
+                            // Going out
+                            enemy.position.add(enemy.direction.clone().multiplyScalar(enemy.speed));
+                            enemy.rotation.z += 0.2; // Spin effect
+                            
+                            if (enemy.position.distanceTo(enemy.targetPos) < 2) {
+                                enemy.phase = 1;
+                            }
+                        } else {
+                            // Returning
+                            const returnDir = new THREE.Vector3()
+                                .subVectors(enemy.initialPos, enemy.position)
+                                .normalize();
+                            enemy.position.add(returnDir.multiplyScalar(enemy.speed));
+                            enemy.rotation.z += 0.2; // Continue spinning
+                            
+                            if (enemy.position.distanceTo(enemy.initialPos) < 2) {
+                                scene.remove(enemy);
+                                enemies.splice(i, 1);
+                                continue;
+                            }
+                        }
+                    } else if (enemy.geometry instanceof THREE.SphereGeometry) {
+                        // Watermelon seeds
+                        enemy.position.add(enemy.velocity);
+                        enemy.rotation.x += 0.1; // Add rotation for visual effect
+                        
+                        // Remove if too far
+                        if (enemy.position.length() > HALF_BOARD * 2) {
+                            scene.remove(enemy);
+                            enemies.splice(i, 1);
+                            continue;
+                        }
+                    }
+                    
+                    // Check for collision with player for special moves
+                    if (playerHelicopter.position.distanceTo(enemy.position) < 3) {
+                        health -= enemy.damage;
+                        if (health <= 0 && !isGameOver) {
+                            showGameOver();
+                        }
+                        scene.remove(enemy);
+                        enemies.splice(i, 1);
+                        continue;
+                    }
+                    continue; // Skip regular enemy behavior for special moves
+                }
+                
+                // Handle boss
+                if (enemy.isBoss) {
+                    // Handle rising animation
+                    if (enemy.isRising) {
+                        enemy.position.y += 0.5;
+                        if (enemy.position.y >= 2) { // Lower target height to stay near ground
+                            enemy.position.y = 2;
+                            enemy.isRising = false;
+                        }
+                        continue;
+                    }
+                    
+                    // Boss movement - chase player on the ground
+                    const direction = new THREE.Vector3();
+                    direction.subVectors(helicopterPos, enemyPos).normalize();
+                    direction.y = 0; // Keep y movement at 0 to stay on ground
+                    
+                    // Move boss
+                const speedMultiplier = 1 + (difficultyMultiplier - 1) * 0.5;
+                    enemy.position.add(
+                        direction.multiplyScalar(BOSS_CONFIG.GIANT_BANANA.baseSpeed * speedMultiplier)
+                    );
+                    enemy.position.y = 2; // Keep at constant low height
+                    
+                    // Make boss face the player
+                    enemy.lookAt(new THREE.Vector3(
+                        helicopterPos.x,
+                        enemy.position.y,
+                        helicopterPos.z
+                    ));
+                    
+                    // Update boss health display
+                    const healthPercent = (enemy.health / enemy.maxHealth) * 100;
+                    document.getElementById('bossHealthValue').textContent = `${Math.ceil(healthPercent)}%`;
+                    document.getElementById('bossHealthFill').style.width = `${healthPercent}%`;
+                    
+                    // Check if boss is defeated
+                    if (enemy.health <= 0) {
+                        showNotification('GIANT BANANA BOSS DEFEATED!');
+                        playSound('explosion');
+                        
+                        // Spawn powerups at boss position
+                        spawnRandomPowerups(enemy.position, BOSS_CONFIG.GIANT_BANANA.powerupCount);
+                        
+                        // Create large explosion effect
+                        createExplosion(enemy.position, 40);
+                        
+                        // Remove boss health display
+                        const bossHealthBar = document.querySelector('.stat-bar:has(#bossHealthValue)');
+                        if (bossHealthBar) {
+                            bossHealthBar.remove();
+                        }
+                        
+                        // Remove boss
+                        scene.remove(enemy);
+                        enemies.splice(i, 1);
+                        continue;
+                    }
+                    
+                    // Add visual effect when damaged
+                    if (enemy.lastHealth && enemy.lastHealth > enemy.health) {
+                        enemy.material.emissive.setHex(0xff0000);
+                        setTimeout(() => {
+                            if (enemy.material) {
+                                enemy.material.emissive.setHex(0x996515);
+                            }
+                        }, 100);
+                    }
+                    enemy.lastHealth = enemy.health;
+                    
+                } else {
+                    // Handle regular enemies and banana waves
+                    // Add health to banana wave minions if they don't have it
+                    if (!enemy.health) {
+                        enemy.health = 50; // Give banana wave minions health
+                        enemy.maxHealth = 50;
+                    }
+                    
+                    // Normal enemy movement
+                    const direction = helicopterPos.sub(enemyPos).normalize();
+                    const baseSpeed = 0.02;
+                    const speedMultiplier = 1 + (difficultyMultiplier - 1) * 0.5;
+                    const finalSpeed = baseSpeed * speedMultiplier * (enemy.speedFactor || 1);
+                    enemy.position.add(direction.multiplyScalar(finalSpeed));
+                    
+                    // Remove if health depleted
+                    if (enemy.health <= 0) {
+                        scene.remove(enemy);
+                        enemies.splice(i, 1);
+                        score += 50; // Less points for minions
+                        createExplosion(enemy.position, 10); // Smaller explosion
+                        continue;
+                    }
+                }
+            }
+        }
+
+        function checkCollisions() {
+            // Enemy collisions
+            enemies.forEach(enemy => {
+                // Calculate collision distance based on enemy type
+                const collisionDistance = enemy.isBoss ? 
+                    BOSS_CONFIG.GIANT_BANANA.scale * 2 : // Larger collision radius for boss
+                    2; // Normal collision radius for regular enemies
+
+                if (playerHelicopter.position.distanceTo(enemy.position) < collisionDistance) {
+                    // More damage from boss collision
+                    const damage = enemy.isBoss ? 2.0 : 0.5;
+                    health -= damage;
+                    updateInfoDisplay();
+                    
+                    // Check for game over
+                    if (health <= 0 && !isGameOver) {
+                        showGameOver();
+                    }
+                }
+            });
+
+            // Power-up collisions
+            powerups.forEach((powerup, index) => {
+                const distance = playerHelicopter.position.distanceTo(powerup.position);
+                if (distance < 5) {
+                    playSound('powerup'); // Add power-up collection sound
+                    const type = powerup.type;
+                    
+                    // Handle different power-up types with stacking
+                    switch(type) {
+                        case 'SPEED':
+                            powerupEffects.speedMultiplier += POWERUP_TYPES.SPEED.increment;
+                            break;
+                        case 'FIRERATE':
+                            powerupEffects.fireRateMultiplier += POWERUP_TYPES.FIRERATE.increment;
+                            break;
+                        case 'DOUBLESHOT':
+                            powerupEffects.shotCount += POWERUP_TYPES.DOUBLESHOT.increment;
+                            break;
+                        case 'MULTISHOT':
+                            powerupEffects.targetCount += POWERUP_TYPES.MULTISHOT.increment;
+                            break;
+                        case 'DAMAGE':
+                            powerupEffects.damageMultiplier += POWERUP_TYPES.DAMAGE.increment;
+                            break;
+                    }
+                    
+                    // Proper cleanup of power-up
+                    scene.remove(powerup);
+                    powerup.children.forEach(child => {
+                        if (child.isLight) {
+                            child.dispose();
+                        }
+                    });
+                    powerup.geometry.dispose();
+                    powerup.material.dispose();
+                    powerups.splice(index, 1);
+                    spawnEnemies(2);
+                    setTimeout(() => createPowerup(type), 5000);
+                    
+                    updateInfoDisplay();
+                }
+            });
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function createTrail() {
+            const trailGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const trailMaterial = new THREE.MeshPhongMaterial({
+                color: 0x87CEEB,
+                transparent: true,
+                opacity: 0.6,
+                emissive: 0x87CEEB,
+                emissiveIntensity: 0.5
+            });
+
+            for (let i = 0; i < TRAIL_LENGTH; i++) {
+                const particle = new THREE.Mesh(trailGeometry, trailMaterial.clone());
+                particle.material.opacity = 1 - (i / TRAIL_LENGTH);
+                scene.add(particle);
+                trailParticles.push(particle);
+            }
+        }
+
+        function updateTrail() {
+            const helicopterPos = playerHelicopter.position;
+            const helicopterRotation = playerHelicopter.rotation;
+            
+            // Calculate direction vector
+            const direction = new THREE.Vector3();
+            if (moveForward || moveBackward || moveLeft || moveRight) {
+                direction.x = moveLeft ? 1 : (moveRight ? -1 : 0);
+                direction.z = moveForward ? 1 : (moveBackward ? -1 : 0);
+                direction.normalize();
+            }
+
+            // Update each trail particle
+            trailParticles.forEach((particle, index) => {
+                const t = index / TRAIL_LENGTH;
+                
+                // Position trail behind helicopter
+                particle.position.copy(helicopterPos);
+                particle.position.x += direction.x * TRAIL_DISTANCE * (1 + t);
+                particle.position.z += direction.z * TRAIL_DISTANCE * (1 + t);
+                
+                // Fade out trail particles
+                particle.material.opacity = 0.6 * (1 - t);
+                
+                // Add some vertical oscillation
+                particle.position.y = helicopterPos.y + Math.sin(t * Math.PI + Date.now() * 0.005) * 0.2;
+            });
+        }
+
+        function createPowerup(type) {
+            const geometry = new THREE.TetrahedronGeometry(1, 0);
+            const material = new THREE.MeshPhongMaterial({
+                color: POWERUP_TYPES[type].color,
+                emissive: POWERUP_TYPES[type].color,
+                emissiveIntensity: 0.5,
+                shininess: 50,
+                transparent: true,
+                opacity: 0.9
+            });
+            const powerup = new THREE.Mesh(geometry, material);
+            
+            // Random position within bounds
+            powerup.position.set(
+                Math.random() * (BOARD_SIZE - 20) - (BOARD_SIZE/2 - 10),
+                2,
+                Math.random() * (BOARD_SIZE - 20) - (BOARD_SIZE/2 - 10)
+            );
+            
+            powerup.type = type;
+            
+            // Add glowing effect for all powerups
+            // Inner glow
+            const innerGlow = new THREE.PointLight(POWERUP_TYPES[type].color, 1, 3);
+            innerGlow.position.set(0, 0, 0);
+            powerup.add(innerGlow);
+            
+            // Outer glow
+            const outerGlow = new THREE.PointLight(POWERUP_TYPES[type].color, 0.5, 6);
+            outerGlow.position.set(0, 0, 0);
+            powerup.add(outerGlow);
+            
+            // Add pulsing animation data
+            powerup.userData = {
+                initialY: powerup.position.y,
+                glowIntensity: {
+                    inner: 1,
+                    outer: 0.5
+                },
+                phase: Math.random() * Math.PI * 2 // Random starting phase for variety
+            };
+            
+            scene.add(powerup);
+            powerups.push(powerup);
+        }
+
+        function updateInfoDisplay() {
+            const minutes = Math.floor(gameTimer / 60);
+            const seconds = Math.floor(gameTimer % 60);
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Update health bar and value
+            document.getElementById('healthFill').style.width = `${health}%`;
+            document.getElementById('healthValue').textContent = Math.ceil(health);
+            
+            // Update other stats
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('timeValue').textContent = timeString;
+            document.getElementById('fpsValue').textContent = fps;
+            document.getElementById('enemyCount').textContent = enemies.length;
+            const difficulty = difficultyMultiplier * 100;
+            document.getElementById('difficultyValue').textContent = 
+                `${difficulty.toFixed(0)}%`;
+            
+            // Check for boss warnings
+            if (difficulty >= 200 && !warningShown.banana) {
+                showNotification('WARNING: Giant Banana Boss approaching at 300%!');
+                warningShown.banana = true;
+            } else if (difficulty >= 400 && !warningShown.apple) {
+                showNotification('WARNING: Giant Apple Boss approaching at 500%!');
+                warningShown.apple = true;
+            } else if (difficulty >= 650 && !warningShown.watermelon) {
+                showNotification('WARNING: Giant Watermelon Boss approaching at 750%!');
+                warningShown.watermelon = true;
+            }
+            
+            // Spawn bosses at their respective thresholds
+            if (difficulty >= 300 && !bossSpawned.banana) {
+                showNotification('GIANT BANANA BOSS HAS APPEARED!');
+                spawnBoss('BANANA');
+                showBossHealth();
+                bossSpawned.banana = true;
+            } else if (difficulty >= 500 && !bossSpawned.apple) {
+                showNotification('GIANT APPLE BOSS HAS APPEARED!');
+                spawnBoss('APPLE');
+                showBossHealth();
+                bossSpawned.apple = true;
+            } else if (difficulty >= 750 && !bossSpawned.watermelon) {
+                showNotification('GIANT WATERMELON BOSS HAS APPEARED!');
+                spawnBoss('WATERMELON');
+                showBossHealth();
+                bossSpawned.watermelon = true;
+            }
+            
+            // Update multipliers with color coding
+            const multipliers = {
+                'speedMultiplier': powerupEffects.speedMultiplier,
+                'fireRateMultiplier': powerupEffects.fireRateMultiplier,
+                'damageMultiplier': powerupEffects.damageMultiplier,
+                'shotCount': powerupEffects.shotCount,
+                'targetCount': powerupEffects.targetCount
+            };
+            
+            Object.entries(multipliers).forEach(([key, value]) => {
+                const element = document.getElementById(`${key}Value`);
+                if (element) {
+                    element.textContent = `${value.toFixed(1)}x`;
+                    element.style.color = value > 1 ? '#00ff00' : '#ffffff';
+                }
+            });
+
+            // Add sprint status display
+            const currentTime = performance.now();
+            let sprintStatus = '';
+            
+            if (isSprintActive) {
+                const remainingTime = Math.max(0, (sprintEndTime - currentTime) / 1000).toFixed(1);
+                sprintStatus = `Sprint: ${remainingTime}s`;
+            } else if (!canSprint) {
+                const cooldownTime = Math.max(0, (sprintCooldownEndTime - currentTime) / 1000).toFixed(1);
+                sprintStatus = `Cooldown: ${cooldownTime}s`;
+            } else {
+                sprintStatus = 'Sprint: Ready';
+            }
+            
+            // Add sprint status element if it doesn't exist
+            let sprintElement = document.getElementById('sprintStatus');
+            if (!sprintElement) {
+                const hudRight = document.querySelector('.hud-right');
+                const sprintBar = document.createElement('div');
+                sprintBar.className = 'stat-bar';
+                sprintBar.innerHTML = `
+                    <div class="stat-label">SPRINT</div>
+                    <div class="stat-value" id="sprintStatus">Ready</div>
+                `;
+                hudRight.appendChild(sprintBar);
+            } else {
+                sprintElement.textContent = sprintStatus;
+                sprintElement.style.color = canSprint ? '#00ff00' : '#ff0000';
+            }
+        }
+
+        function addBoundaryWalls() {
+            const wallGeometry = new THREE.BoxGeometry(BOARD_SIZE, 10, 2, 50, 10, 4);
+            const wallMaterial = new THREE.MeshPhongMaterial({ 
+                color: 0x808080, 
+                transparent: true, 
+                opacity: 0.3,
+                flatShading: false,
+                specular: 0x222222,
+                shininess: 20
+            });
+            
+            // North wall
+            const northWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            northWall.position.set(0, 5, -HALF_BOARD);
+            scene.add(northWall);
+            
+            // South wall
+            const southWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            southWall.position.set(0, 5, HALF_BOARD);
+            scene.add(southWall);
+            
+            // East wall
+            const eastWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            eastWall.rotation.y = Math.PI / 2;
+            eastWall.position.set(HALF_BOARD, 5, 0);
+            scene.add(eastWall);
+            
+            // West wall
+            const westWall = new THREE.Mesh(wallGeometry, wallMaterial);
+            westWall.rotation.y = Math.PI / 2;
+            westWall.position.set(-HALF_BOARD, 5, 0);
+            scene.add(westWall);
+        }
+
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                
+                // Update bullet tracking if it has a target
+                if (bullet.target && !bullet.target.isBeingRemoved) {
+                    const direction = new THREE.Vector3();
+                    direction.subVectors(bullet.target.position, bullet.mesh.position);
+                    direction.normalize();
+                    
+                    // Blend between current velocity and target direction for smooth homing
+                    bullet.velocity.lerp(direction.multiplyScalar(2), 0.2);
+                }
+                
+                bullet.mesh.position.add(bullet.velocity);
+                
+                // Remove bullets that go too far
+                if (bullet.mesh.position.length() > HALF_BOARD * 2) {
+                    scene.remove(bullet.mesh);
+                    bullet.mesh.geometry.dispose();
+                    bullet.mesh.material.dispose();
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Check for enemy hits
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    
+                    // Skip collision check if enemy is already being removed
+                    if (enemy.isBeingRemoved) continue;
+                    
+                    const distance = bullet.mesh.position.distanceTo(enemy.position);
+                    
+                    if (distance < (enemy.isBoss ? BOSS_CONFIG.GIANT_BANANA.scale : 2)) {
+                        // Remove bullet first
+                        scene.remove(bullet.mesh);
+                        bullet.mesh.geometry.dispose();
+                        bullet.mesh.material.dispose();
+                        bullets.splice(i, 1);
+                        
+                        playSound('hit');
+                        
+                        // Apply damage
+                        if (enemy.isBoss) {
+                            enemy.health -= bullet.damage * 0.5;
+                            
+                            // Immediate boss defeat check
+                            if (enemy.health <= 0 && !enemy.isBeingRemoved) {
+                                enemy.isBeingRemoved = true; // Mark as being removed
+                                
+                                // Stop all boss processes immediately
+                                if (enemy.spawnTimeout) {
+                                    clearTimeout(enemy.spawnTimeout);
+                                }
+                                
+                                // Show defeat notification
+                                showNotification('GIANT BANANA BOSS DEFEATED!');
+                                playSound('explosion');
+                                
+                                // Remove boss immediately
+                                scene.remove(enemy);
+                                enemy.geometry.dispose();
+                                enemy.material.dispose();
+                                enemies.splice(j, 1);
+                                
+                                // Remove boss health display
+                                const bossHealthBar = document.querySelector('.stat-bar:has(#bossHealthValue)');
+                                if (bossHealthBar) {
+                                    bossHealthBar.remove();
+                                }
+                                
+                                // Spawn powerups and create explosion
+                                spawnRandomPowerups(enemy.position, BOSS_CONFIG.GIANT_BANANA.powerupCount);
+                                createExplosion(enemy.position, 40);
+                                
+                                // Reset boss flags
+                                bossSpawned.banana = false;
+                                warningShown.banana = false;
+                                
+                                // Add score
+                                score += 1000;
+                                
+                                // Clean up all existing banana wave minions
+                                for (let k = enemies.length - 1; k >= 0; k--) {
+                                    const minion = enemies[k];
+                                    if (!minion.isBoss) {
+                                        scene.remove(minion);
+                                        minion.geometry.dispose();
+                                        minion.material.dispose();
+                                        enemies.splice(k, 1);
+                                    }
+                                }
+                                
+                                // Clean up all bullets
+                                for (let k = bullets.length - 1; k >= 0; k--) {
+                                    const bullet = bullets[k];
+                        scene.remove(bullet.mesh);
+                                    bullet.mesh.geometry.dispose();
+                                    bullet.mesh.material.dispose();
+                                }
+                                bullets.length = 0;
+                                
+                                // Spawn new enemies after a delay
+                                setTimeout(() => {
+                                    for (let i = 0; i < 5; i++) {
+                                        spawnEnemies(3);
+                                    }
+                                }, 2000);
+                            }
+                        } else {
+                            enemy.health -= bullet.damage;
+                            if (enemy.health <= 0 && !enemy.isBeingRemoved) {
+                                enemy.isBeingRemoved = true;
+                            scene.remove(enemy);
+                            enemy.geometry.dispose();
+                            enemy.material.dispose();
+                            enemies.splice(j, 1);
+                            score += 100;
+                            createExplosion(enemy.position);
+                            }
+                        }
+                        
+                        updateInfoDisplay();
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Update explosion effect to clean up properly
+        function createExplosion(position, particleCount = 20) {
+            const particles = [];
+            
+            for (let i = 0; i < particleCount; i++) {
+                const geometry = new THREE.SphereGeometry(0.2, 8, 8);
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0xff4400,
+                    emissive: 0xff0000,
+                    emissiveIntensity: 0.5,
+                    transparent: true,
+                    opacity: 1
+                });
+                
+                const particle = new THREE.Mesh(geometry, material);
+                particle.position.copy(position);
+                
+                // Stronger explosion for boss
+                const explosionForce = particleCount > 20 ? 0.6 : 0.3;
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * explosionForce,
+                    Math.random() * explosionForce,
+                    (Math.random() - 0.5) * explosionForce
+                );
+                
+                scene.add(particle);
+                particles.push(particle);
+            }
+            
+            // Remove particles after animation
+            setTimeout(() => {
+                particles.forEach(particle => {
+                    scene.remove(particle);
+                    particle.geometry.dispose();
+                    particle.material.dispose();
+                });
+                particles.length = 0;
+            }, 1000);
+            
+            // Animate particles
+            const animateParticles = () => {
+                if (particles.length === 0) return;
+                
+                particles.forEach(particle => {
+                    particle.position.add(particle.velocity);
+                    particle.material.opacity -= 0.02;
+                    particle.scale.multiplyScalar(0.98);
+                });
+                
+                requestAnimationFrame(animateParticles);
+            };
+            
+            animateParticles();
+        }
+
+        function addGameOverStyles() {
+            const style = document.createElement('style');
+            style.textContent = `
+                #gameOverScreen {
+                    display: none;
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: rgba(2, 6, 23, 0.95);
+                    padding: 40px;
+                    border-radius: 16px;
+                    color: white;
+                    text-align: center;
+                    z-index: 1000;
+                    min-width: 320px;
+                    backdrop-filter: blur(12px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                }
+                #gameOverScreen h1 {
+                    color: #ef4444;
+                    margin-bottom: 24px;
+                    font-size: 36px;
+                    font-weight: 700;
+                    text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+                }
+                #gameOverScreen p {
+                    margin: 12px 0;
+                    font-size: 18px;
+                    color: rgba(255, 255, 255, 0.9);
+                }
+                #gameOverScreen button {
+                    background: #ef4444;
+                    color: white;
+                    border: none;
+                    padding: 12px 32px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    font-weight: 600;
+                    margin-top: 24px;
+                    transition: all 0.2s ease;
+                    font-family: 'Plus Jakarta Sans', sans-serif;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.5);
+                }
+                #gameOverScreen button:hover {
+                    background: #dc2626;
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 8px -1px rgba(239, 68, 68, 0.6);
+                }
+                #gameOverScreen button:active {
+                    transform: translateY(0);
+                    box-shadow: 0 2px 4px -1px rgba(239, 68, 68, 0.4);
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        function addGameOverScreen() {
+            const gameOverDiv = document.createElement('div');
+            gameOverDiv.id = 'gameOverScreen';
+            gameOverDiv.innerHTML = `
+                <h1>Game Over!</h1>
+                <p>Time Survived: <span id="finalTime">0:00</span></p>
+                <p>Final Score: <span id="finalScore">0</span></p>
+                <button onclick="restartGame()">Play Again</button>
+            `;
+            document.body.appendChild(gameOverDiv);
+        }
+
+        function showGameOver() {
+            const gameOverScreen = document.getElementById('gameOverScreen');
+            const minutes = Math.floor(gameTimer / 60);
+            const seconds = Math.floor(gameTimer % 60);
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('finalTime').textContent = timeString;
+            document.getElementById('finalScore').textContent = score;
+            gameOverScreen.style.display = 'block';
+            
+            // Stop the game
+            isGameOver = true;
+        }
+
+        function restartGame() {
+            // Reset game variables
+            health = 100;
+            score = 0;
+            gameTimer = 0;
+            difficultyMultiplier = 1.0;
+            isGameOver = false;
+            lastTime = performance.now();
+            frameCount = 0;
+            lastFpsUpdate = 0;
+            
+            // Reset movement flags
+            moveForward = false;
+            moveBackward = false;
+            moveLeft = false;
+            moveRight = false;
+            isJumping = false;
+            isSprinting = false;
+            isMouseDown = false;
+            
+            // Reset power-up effects
+            powerupEffects = {
+                speedMultiplier: 1.0,
+                fireRateMultiplier: 1.0,
+                shotCount: 1,
+                targetCount: 1,
+                damageMultiplier: 1.0
+            };
+            
+            // Reset sprint variables
+            canSprint = true;
+            isSprintActive = false;
+            sprintEndTime = 0;
+            sprintCooldownEndTime = 0;
+            
+            // Clear existing enemies, bullets, and power-ups
+            while(enemies.length > 0) {
+                const enemy = enemies.pop();
+                scene.remove(enemy);
+                enemy.geometry.dispose();
+                enemy.material.dispose();
+            }
+            
+            while(bullets.length > 0) {
+                const bullet = bullets.pop();
+                scene.remove(bullet.mesh);
+                bullet.mesh.geometry.dispose();
+                bullet.mesh.material.dispose();
+            }
+            
+            while(powerups.length > 0) {
+                const powerup = powerups.pop();
+                scene.remove(powerup);
+                powerup.children.forEach(child => {
+                    if (child.isLight) {
+                        child.dispose();
+                    }
+                });
+                powerup.geometry.dispose();
+                powerup.material.dispose();
+            }
+            
+            // Reset player position
+            playerHelicopter.position.set(0, 0, 0);
+            camera.position.set(0, 40, 40);
+            camera.lookAt(playerHelicopter.position);
+            
+            // Spawn initial enemies and power-ups
+            spawnEnemies(5);
+            createPowerup('SPEED');
+            createPowerup('FIRERATE');
+            createPowerup('DOUBLESHOT');
+            createPowerup('MULTISHOT');
+            createPowerup('DAMAGE');
+            
+            // Hide game over screen
+            document.getElementById('gameOverScreen').style.display = 'none';
+            
+            // Update display
+            updateInfoDisplay();
+            
+            // Restart animation loop
+            if (!isGameOver) {
+                animate();
+            }
+            
+            bossSpawned = {
+                banana: false,
+                apple: false,
+                watermelon: false
+            };
+            
+            warningShown = {
+                banana: false,
+                apple: false,
+                watermelon: false
+            };
+            
+            // Clear all timeouts
+            enemies.forEach(enemy => {
+                if (enemy.spawnTimeout) {
+                    clearTimeout(enemy.spawnTimeout);
+                }
+            });
+        }
+
+        // Make restartGame function globally accessible
+        window.restartGame = restartGame;
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
+        }
+
+        function spawnBoss(type) {
+            const bossConfig = BOSS_CONFIG[`GIANT_${type}`];
+            const fruitData = FRUIT_TYPES[type];
+            
+            let geometry;
+            if (type === 'BANANA') {
+                geometry = new THREE.TorusGeometry(2.5, 1, 16, 32, Math.PI);
+            } else if (type === 'APPLE') {
+                geometry = new THREE.SphereGeometry(2, 16, 16);
+            } else if (type === 'WATERMELON') {
+                geometry = new THREE.SphereGeometry(2.5, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.7);
+            }
+
+            const material = new THREE.MeshPhongMaterial({
+                color: fruitData.color,
+                emissive: fruitData.color,
+                emissiveIntensity: 0.3,
+                shininess: 50
+            });
+            
+            const boss = new THREE.Mesh(geometry, material);
+            boss.scale.set(
+                bossConfig.scale,
+                bossConfig.scale,
+                bossConfig.scale
+            );
+            
+            // Spawn boss farther away from player (50 units instead of 20)
+            const spawnDistance = 50;
+            const randomAngle = Math.random() * Math.PI * 2;
+            boss.position.set(
+                playerHelicopter.position.x + Math.cos(randomAngle) * spawnDistance,
+                0,
+                playerHelicopter.position.z + Math.sin(randomAngle) * spawnDistance
+            );
+            
+            boss.health = bossConfig.health;
+            boss.maxHealth = bossConfig.health;
+            boss.isBoss = true;
+            boss.bossType = type;
+            boss.lastSpawnTime = 0;
+            boss.isRising = true;
+            boss.targetHeight = 2;
+            
+            scene.add(boss);
+            enemies.push(boss);
+            
+            createExplosion(boss.position, 30);
+            
+            // Give player more time to prepare (3 seconds instead of 2)
+            setTimeout(() => spawnFruitWave(boss), 3000);
+            
+            boss.lastSpecialMove = 0;
+        }
+
+        function createFruit(type) {
+            const fruitData = FRUIT_TYPES[type];
+            const geometry = new THREE.TorusGeometry(0.5, 0.2, 8, 16, Math.PI);
+            const material = new THREE.MeshPhongMaterial({
+                color: fruitData.color,
+                flatShading: false,
+                specular: 0x444444,
+                shininess: 30
+            });
+            
+            const fruit = new THREE.Mesh(geometry, material);
+            const baseScale = fruitData.scale;
+            fruit.scale.set(baseScale, baseScale, baseScale);
+            scene.add(fruit);
+            
+            return fruit;
+        }
+
+        // Create a generic fruit wave spawn function
+        function spawnFruitWave(boss) {
+            if (!boss.parent || boss.health <= 0) return;
+            
+            const bossConfig = BOSS_CONFIG[`GIANT_${boss.bossType}`];
+            const currentTime = performance.now();
+            
+            // Check for special move
+            if (currentTime - boss.lastSpecialMove >= bossConfig.specialMove.cooldown) {
+                executeSpecialMove(boss);
+                boss.lastSpecialMove = currentTime;
+                showNotification(`${boss.bossType} BOSS: ${bossConfig.specialMove.name}!`);
+            }
+            
+            if (currentTime - boss.lastSpawnTime >= bossConfig.spawnInterval) {
+                showNotification(`${boss.bossType} WAVE INCOMING!`);
+                
+                // Different spawn patterns for each boss
+                if (boss.bossType === 'BANANA') {
+                    // Circle pattern
+                    const spawnRadius = bossConfig.orbitRadius;
+                    const angleStep = (2 * Math.PI) / bossConfig.spawnCount;
+                    
+                    for (let i = 0; i < bossConfig.spawnCount; i++) {
+                        const angle = angleStep * i;
+                        spawnMinion(boss, Math.cos(angle) * spawnRadius, Math.sin(angle) * spawnRadius);
+                    }
+                } else if (boss.bossType === 'APPLE') {
+                    // Grid pattern
+                    const gridSize = Math.ceil(Math.sqrt(bossConfig.spawnCount));
+                    const spacing = bossConfig.orbitRadius / gridSize;
+                    
+                    for (let i = 0; i < bossConfig.spawnCount; i++) {
+                        const row = Math.floor(i / gridSize);
+                        const col = i % gridSize;
+                        const x = (col - gridSize/2) * spacing;
+                        const z = (row - gridSize/2) * spacing;
+                        spawnMinion(boss, x, z);
+                    }
+                } else if (boss.bossType === 'WATERMELON') {
+                    // Spiral pattern
+                    const spirals = 3;
+                    const pointsPerSpiral = Math.floor(bossConfig.spawnCount / spirals);
+                    
+                    for (let s = 0; s < spirals; s++) {
+                        for (let i = 0; i < pointsPerSpiral; i++) {
+                            const angle = (i / pointsPerSpiral) * Math.PI * 2 + (s * 2 * Math.PI / spirals);
+                            const radius = (i / pointsPerSpiral) * bossConfig.orbitRadius;
+                            spawnMinion(boss, Math.cos(angle) * radius, Math.sin(angle) * radius);
+                        }
+                    }
+                }
+                
+                boss.lastSpawnTime = currentTime;
+            }
+            
+            if (boss.health > 0) {
+                boss.spawnTimeout = setTimeout(() => spawnFruitWave(boss), 1000);
+            }
+        }
+
+        // Helper function to spawn individual minions
+        function spawnMinion(boss, offsetX, offsetZ) {
+            const minion = createFruit(boss.bossType);
+            minion.health = 50;
+            minion.maxHealth = 50;
+            
+            const spawnX = boss.position.x + offsetX;
+            const spawnZ = boss.position.z + offsetZ;
+            minion.position.set(spawnX, 0, spawnZ);
+            
+            const direction = new THREE.Vector3()
+                .subVectors(playerHelicopter.position, minion.position)
+                .normalize();
+            
+            direction.y = 0.5;
+            direction.x += (Math.random() - 0.5) * 0.3;
+            direction.z += (Math.random() - 0.5) * 0.3;
+            direction.normalize();
+            
+            minion.velocity = direction.multiplyScalar(0.5);
+            enemies.push(minion);
+        }
+
+        // Add boss health display to HUD
+        function addBossHealthDisplay() {
+            const hudRight = document.querySelector('.hud-right');
+            const bossHealthBar = document.createElement('div');
+            bossHealthBar.className = 'stat-bar';
+            bossHealthBar.innerHTML = `
+                <div class="stat-label">BOSS HP</div>
+                <div class="boss-health-bar">
+                    <div class="boss-health-fill" id="bossHealthFill"></div>
+                </div>
+                <div class="stat-value" id="bossHealthValue">100%</div>
+            `;
+            hudRight.appendChild(bossHealthBar);
+        }
+
+        // Call this when spawning the boss
+        function showBossHealth() {
+            addBossHealthDisplay();
+        }
+
+        // Modify spawnRandomPowerups to ensure proper cleanup
+        function spawnRandomPowerups(position, count) {
+            const powerupTypes = ['SPEED', 'FIRERATE', 'DOUBLESHOT', 'MULTISHOT', 'DAMAGE'];
+            const spread = 20;
+            
+            // Clear any existing powerups that might cause issues
+            while(powerups.length > 50) { // Keep a reasonable maximum
+                const oldPowerup = powerups.shift();
+                scene.remove(oldPowerup);
+                oldPowerup.geometry.dispose();
+                oldPowerup.material.dispose();
+            }
+            
+            for (let i = 0; i < count; i++) {
+                const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+                const randomX = position.x + (Math.random() - 0.5) * spread;
+                const randomZ = position.z + (Math.random() - 0.5) * spread;
+                
+                const powerup = createPowerup(randomType);
+                powerup.position.set(randomX, 2, randomZ);
+            }
+        }
+
+        // Add special move execution function
+        function executeSpecialMove(boss) {
+            const bossConfig = BOSS_CONFIG[`GIANT_${boss.bossType}`];
+            
+            switch (boss.bossType) {
+                case 'BANANA':
+                    // Banana Boomerang - throws a large boomerang that returns
+                    const boomerang = createFruit('BANANA');
+                    boomerang.scale.multiplyScalar(4); // Make it bigger
+                    boomerang.position.copy(boss.position);
+                    boomerang.isSpecialMove = true;
+                    boomerang.bossType = 'BANANA'; // Add this for identification
+                    boomerang.damage = bossConfig.specialMove.damage;
+                    
+                    // Add glow effect
+                    const boomerangGlow = new THREE.PointLight(FRUIT_TYPES.BANANA.color, 1, 10);
+                    boomerang.add(boomerangGlow);
+                    
+                    const targetPos = playerHelicopter.position.clone();
+                    const direction = new THREE.Vector3()
+                        .subVectors(targetPos, boss.position)
+                        .normalize();
+                    
+                    boomerang.phase = 0;
+                    boomerang.initialPos = boss.position.clone();
+                    boomerang.targetPos = targetPos;
+                    boomerang.direction = direction;
+                    boomerang.speed = bossConfig.specialMove.projectileSpeed;
+                    
+                    enemies.push(boomerang);
+                    break;
+                    
+                case 'APPLE':
+                    // Apple Explosion - creates expanding ring of damage
+                    const explosion = new THREE.Mesh(
+                        new THREE.RingGeometry(1, 2, 32),
+                        new THREE.MeshBasicMaterial({
+                            color: FRUIT_TYPES.APPLE.color,
+                            transparent: true,
+                            opacity: 0.5
+                        })
+                    );
+                    explosion.position.copy(boss.position);
+                    explosion.rotation.x = -Math.PI / 2;
+                    explosion.isSpecialMove = true;
+                    explosion.damage = bossConfig.specialMove.damage;
+                    explosion.maxRadius = bossConfig.specialMove.radius;
+                    explosion.currentRadius = 1;
+                    
+                    scene.add(explosion);
+                    
+                    // Animate explosion
+                    const expandRing = () => {
+                        if (explosion.currentRadius >= explosion.maxRadius) {
+                            scene.remove(explosion);
+                            explosion.geometry.dispose();
+                            explosion.material.dispose();
+                            return;
+                        }
+                        
+                        explosion.currentRadius += 1;
+                        explosion.scale.set(
+                            explosion.currentRadius,
+                            explosion.currentRadius,
+                            1
+                        );
+                        
+                        // Check for player collision
+                        const distance = playerHelicopter.position.distanceTo(explosion.position);
+                        if (distance <= explosion.currentRadius) {
+                            health -= explosion.damage;
+                            if (health <= 0 && !isGameOver) {
+                                showGameOver();
+                            }
+                        }
+                        
+                        requestAnimationFrame(expandRing);
+                    };
+                    expandRing();
+                    break;
+                    
+                case 'WATERMELON':
+                    // Seed Barrage - improved version
+                    const angleStep = (2 * Math.PI) / bossConfig.specialMove.projectileCount;
+                    
+                    for (let i = 0; i < bossConfig.specialMove.projectileCount; i++) {
+                        const angle = angleStep * i;
+                        const seed = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.8, 8, 8), // Bigger seeds
+                            new THREE.MeshPhongMaterial({
+                                color: 0x111111,
+                                emissive: 0x222222,
+                                shininess: 30
+                            })
+                        );
+                        
+                        // Add trail effect light
+                        const seedGlow = new THREE.PointLight(0x444444, 0.5, 5);
+                        seed.add(seedGlow);
+                        
+                        seed.position.copy(boss.position);
+                        seed.position.y = 2; // Slightly elevated
+                        seed.isSpecialMove = true;
+                        seed.damage = bossConfig.specialMove.damage;
+                        
+                        const direction = new THREE.Vector3(
+                            Math.cos(angle),
+                            0,
+                            Math.sin(angle)
+                        );
+                        
+                        seed.velocity = direction.multiplyScalar(1.5); // Faster seeds
+                        enemies.push(seed);
+                    }
+                    break;
+            }
+        }
+    </script>
+</body>
+</html>
