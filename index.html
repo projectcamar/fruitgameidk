@@ -334,37 +334,37 @@
                 color: 0xFFE135,
                 scale: 1.0,
                 healthMultiplier: 0.8,
-                speedMultiplier: 2.0  // 100% faster
+                speedMultiplier: 3.0  // Increased from 2.0
             },
             APPLE: {
                 color: 0xFF0000,
                 scale: 0.9,
                 healthMultiplier: 1.0,
-                speedMultiplier: 1.2  // 20% faster
+                speedMultiplier: 2.4  // Increased from 1.2
             },
             WATERMELON: {
                 color: 0x008000,
                 scale: 1.5,
                 healthMultiplier: 1.5,
-                speedMultiplier: 0.7  // 30% slower due to size
+                speedMultiplier: 2.1  // Increased from 0.7
             },
             ORANGE: {
                 color: 0xFFA500,
                 scale: 0.8,
                 healthMultiplier: 0.9,
-                speedMultiplier: 1.5  // 50% faster
+                speedMultiplier: 4.5  // Increased from 1.5
             },
             STRAWBERRY: {
                 color: 0xFF3030,
                 scale: 0.7,
                 healthMultiplier: 0.7,
-                speedMultiplier: 1.8  // 80% faster (small but quick)
+                speedMultiplier: 5.4  // Increased from 1.8
             },
             PINEAPPLE: {
                 color: 0xFFD700,
                 scale: 1.2,
                 healthMultiplier: 1.2,
-                speedMultiplier: 0.9  // 10% slower
+                speedMultiplier: 2.7  // Increased from 0.9
             }
         };
         const powerups = [];
@@ -509,6 +509,9 @@
             spawnInterval: 120000, // 2 minutes in milliseconds
             lastSpawnTime: 0 // Start at 0 instead of negative value
         };
+
+        // Add after other global variables
+        let isGameStarted = false;
 
         function animate() {
             if (isGameOver) return;
@@ -1208,9 +1211,9 @@
                         enemy.maxHealth = 50;
                     }
                     
-                    // Normal enemy movement
+                    // Normal enemy movement - Increased base speed by 200%
                     const direction = helicopterPos.sub(enemyPos).normalize();
-                    const baseSpeed = 0.02;
+                    const baseSpeed = 0.06; // Increased from 0.02 (tripled)
                     const speedMultiplier = 1 + (difficultyMultiplier - 1) * 0.5;
                     const finalSpeed = baseSpeed * speedMultiplier * (enemy.speedFactor || 1);
                     enemy.position.add(direction.multiplyScalar(finalSpeed));
