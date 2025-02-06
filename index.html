@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple FPS Game</title>
+    <title>Fruit Killer</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
@@ -9,6 +9,10 @@
             margin: 0; 
             overflow: hidden;
             font-family: 'Plus Jakarta Sans', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
 
         #info { position: absolute; top: 10px; left: 10px; color: white; }
@@ -71,36 +75,43 @@
             top: 0;
             left: 0;
             width: 100%;
-            padding: 24px;
+            padding: 16px;
             display: flex;
             justify-content: space-between;
-            z-index: 1000;
-            gap: 24px;
+            z-index: 1002;
+            gap: 16px;
+            pointer-events: none;
         }
         .hud-left, .hud-right {
-            background: rgba(2, 6, 23, 0.85);
-            padding: 20px;
+            background: rgba(2, 6, 23, 0.95);
+            padding: 12px 16px;
             border-radius: 12px;
-            min-width: 280px;
+            min-width: 240px;
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
                         0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         .stat-bar {
-            margin: 8px 0;
+            margin: 4px 0;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             transition: all 0.2s ease;
         }
         .stat-label {
             color: rgba(255, 255, 255, 0.7);
-            width: 100px;
+            width: 80px;
             font-size: 14px;
             font-weight: 500;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-text-fill-color: currentColor;
+            -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.5);
         }
         .stat-value {
             color: #fff;
@@ -109,6 +120,12 @@
             font-size: 15px;
             min-width: 60px;
             text-align: right;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-text-fill-color: currentColor;
+            -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.5);
         }
         .health-bar, .boss-health-bar {
             width: 100%;
@@ -129,57 +146,68 @@
             position: fixed;
             bottom: 24px;
             left: 24px;
-            background: rgba(2, 6, 23, 0.85);
-            padding: 16px;
+            background: rgba(2, 6, 23, 0.95);
+            padding: 12px;
             border-radius: 12px;
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            min-width: 240px;
+            min-width: 200px;
+            z-index: 1002;
+            pointer-events: none;
         }
         .multiplier-container .stat-bar {
-            margin: 4px 0;
+            margin: 2px 0;
         }
         .multiplier-container .stat-label {
-            width: 90px;
-            font-size: 13px;
+            width: 70px;
+            font-size: 12px;
         }
         .multiplier-container .stat-value {
-            font-size: 14px;
+            font-size: 13px;
         }
         .notification {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(239, 68, 68, 0.95);
+            top: unset;
+            left: unset;
+            right: 24px;
+            transform: none;
+            background: rgba(2, 6, 23, 0.85);
             color: white;
-            padding: 16px 32px;
-            border-radius: 12px;
-            font-size: 24px;
-            font-weight: 700;
-            text-align: center;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: right;
             z-index: 1000;
-            animation: fadeInOut 2s forwards;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideIn 2s forwards;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(8px);
+            margin-bottom: 8px;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            -webkit-text-fill-color: currentColor;
+            -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.5);
         }
-        @keyframes fadeInOut {
+        @keyframes slideIn {
             0% { 
                 opacity: 0;
-                transform: translate(-50%, -60%);
+                transform: translateX(20px);
             }
             15% { 
                 opacity: 1;
-                transform: translate(-50%, -50%);
+                transform: translateX(0);
             }
             85% { 
                 opacity: 1;
-                transform: translate(-50%, -50%);
+                transform: translateX(0);
             }
             100% { 
                 opacity: 0;
-                transform: translate(-50%, -40%);
+                transform: translateX(20px);
             }
         }
         .stat-value[id$="MultiplierValue"],
@@ -191,54 +219,28 @@
             color: #4ade80;
             text-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
         }
-        .volume-control {
+        .boss-health-container {
             position: fixed;
-            bottom: 24px;
-            right: 24px;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
             background: rgba(2, 6, 23, 0.85);
-            padding: 16px;
+            padding: 16px 24px;
             border-radius: 12px;
-            color: white;
-            z-index: 1000;
+            min-width: 300px;
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        .notifications-container {
+            position: fixed;
+            right: 24px;
+            top: 180px;
             display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .volume-control label {
-            font-size: 14px;
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.9);
-        }
-        .volume-control input[type="range"] {
-            -webkit-appearance: none;
-            width: 120px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 999px;
-            outline: none;
-        }
-        .volume-control input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: #ef4444;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
-        }
-        .volume-control input[type="range"]::-webkit-slider-thumb:hover {
-            background: #dc2626;
-            transform: scale(1.1);
-        }
-        #volumeValue {
-            font-size: 14px;
-            font-weight: 600;
-            min-width: 48px;
-            text-align: right;
+            flex-direction: column-reverse;
+            gap: 8px;
+            z-index: 1001;
         }
     </style>
 </head>
@@ -324,44 +326,45 @@
             FIRERATE: { color: 0x0000ff, increment: 0.25 },
             DOUBLESHOT: { color: 0xffff00, increment: 1 },
             MULTISHOT: { color: 0xff00ff, increment: 1 },
-            DAMAGE: { color: 0xff6b00, increment: 0.5 }
+            DAMAGE: { color: 0xff6b00, increment: 0.5 },
+            RAGE: { color: 0xffffff, increment: 2.5 } // Slightly reduced multiplier
         };
         const FRUIT_TYPES = {
             BANANA: {
                 color: 0xFFE135,
                 scale: 1.0,
                 healthMultiplier: 0.8,
-                speedMultiplier: 1.2
+                speedMultiplier: 2.0  // 100% faster
             },
             APPLE: {
                 color: 0xFF0000,
                 scale: 0.9,
                 healthMultiplier: 1.0,
-                speedMultiplier: 1.0
+                speedMultiplier: 1.2  // 20% faster
             },
             WATERMELON: {
                 color: 0x008000,
                 scale: 1.5,
                 healthMultiplier: 1.5,
-                speedMultiplier: 0.7
+                speedMultiplier: 0.7  // 30% slower due to size
             },
             ORANGE: {
                 color: 0xFFA500,
                 scale: 0.8,
                 healthMultiplier: 0.9,
-                speedMultiplier: 1.1
+                speedMultiplier: 1.5  // 50% faster
             },
             STRAWBERRY: {
                 color: 0xFF3030,
                 scale: 0.7,
                 healthMultiplier: 0.7,
-                speedMultiplier: 1.3
+                speedMultiplier: 1.8  // 80% faster (small but quick)
             },
             PINEAPPLE: {
                 color: 0xFFD700,
                 scale: 1.2,
                 healthMultiplier: 1.2,
-                speedMultiplier: 0.9
+                speedMultiplier: 0.9  // 10% slower
             }
         };
         const powerups = [];
@@ -447,7 +450,7 @@
                 powerupCount: 30,
                 specialMove: {
                     name: 'Banana Boomerang',
-                    cooldown: 12000,
+                    cooldown: 3000,  // 3 seconds
                     projectileSpeed: 0.8,
                     damage: 10
                 }
@@ -478,12 +481,33 @@
                 orbitSpeed: 0.03,
                 powerupCount: 50,
                 specialMove: {
-                    name: 'Seed Barrage',
-                    cooldown: 10000,
-                    projectileCount: 24,
-                    damage: 20
+                    name: 'Watermelon Cross',
+                    cooldown: 3000,  // Same as banana boss
+                    projectileCount: 4,  // 4 directions
+                    projectileSpeed: 1.2, // Faster than banana
+                    damage: 20,
+                    range: 100  // Longer range
                 }
             }
+        };
+
+        // Add after the SOUNDS object
+        const MUSIC = {
+            background: new Audio('https://opengameart.org/sites/default/files/Juhani%20Junkala%20%5BRetro%20Game%20Music%20Pack%5D%20Level%202.ogg') // By Juhani Junkala (CC0)
+        };
+
+        // Configure background music
+        MUSIC.background.loop = true;
+        MUSIC.background.volume = 0.3;
+
+        // Add after other global variables
+        const rageMode = {
+            active: false,
+            endTime: 0,
+            multiplier: 2.5,
+            duration: 20000,
+            spawnInterval: 120000, // 2 minutes in milliseconds
+            lastSpawnTime: 0 // Start at 0 instead of negative value
         };
 
         function animate() {
@@ -576,15 +600,16 @@
 
             // Floor with texture
             const textureLoader = new THREE.TextureLoader();
-            const floorTexture = textureLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg', () => {
+            const floorTexture = textureLoader.load('https://images.pexels.com/photos/2387793/pexels-photo-2387793.jpeg', () => {
                 renderer.render(scene, camera);
             });
             
-            // Make the texture repeat
-            floorTexture.wrapS = THREE.RepeatWrapping;
-            floorTexture.wrapT = THREE.RepeatWrapping;
-            floorTexture.repeat.set(50, 50); // Adjust the repeat value to change texture density
-            
+            // Remove or modify the repeat settings
+            floorTexture.wrapS = THREE.ClampToEdgeWrapping; // Change from RepeatWrapping
+            floorTexture.wrapT = THREE.ClampToEdgeWrapping; // Change from RepeatWrapping
+            // Remove the repeat.set line that was causing the tiling
+            // floorTexture.repeat.set(50, 50); // Remove this line
+
             const floorGeometry = new THREE.PlaneGeometry(200, 200, 50, 50);
             const floorMaterial = new THREE.MeshPhongMaterial({ 
                 map: floorTexture,
@@ -675,24 +700,16 @@
             addGameOverStyles();
             addGameOverScreen();
 
-            // Add volume control UI
-            const volumeControl = document.createElement('div');
-            volumeControl.className = 'volume-control';
-            volumeControl.innerHTML = `
-                <label for="volume">Sound Volume: </label>
-                <input type="range" id="volume" min="0" max="100" value="30">
-                <span id="volumeValue">30%</span>
-            `;
-            document.body.appendChild(volumeControl);
+            // Setup background music
+            document.addEventListener('click', () => {
+                // Start music on first click (browser requirement)
+                if (MUSIC.background.paused) {
+                    MUSIC.background.play().catch(e => console.log("Music play failed:", e));
+                }
+            }, { once: true });
 
-            // Add volume control listener
-            document.getElementById('volume').addEventListener('input', (e) => {
-                const volume = e.target.value / 100;
-                Object.values(SOUNDS).forEach(sound => {
-                    sound.volume = volume;
-                });
-                document.getElementById('volumeValue').textContent = `${e.target.value}%`;
-            });
+            // Start rage powerup spawn cycle
+            spawnRagePowerup();
         }
 
         function createSkybox() {
@@ -700,7 +717,7 @@
             const skyboxGeometry = new THREE.BoxGeometry(2000, 2000, 2000);
             
             // Using a freely available sky texture from threejs examples
-            const texture = loader.load('https://threejs.org/examples/textures/2294472375_24a3b8ef46_o.jpg', () => {
+            const texture = loader.load('https://images.pexels.com/photos/998641/pexels-photo-998641.jpeg', () => {
                 renderer.render(scene, camera);
             });
             
@@ -788,8 +805,8 @@
                 
                 const enemy = new THREE.Mesh(geometry, material);
                 
-                // Scale the fruit according to its type
-                const baseScale = fruitData.scale;
+                // Scale the fruit according to its type with 150% increase
+                const baseScale = fruitData.scale * 2.5; // Increased by 150%
                 enemy.scale.set(baseScale, baseScale, baseScale);
                 
                 // Random position with random height
@@ -830,7 +847,7 @@
                 .map(target => target.enemy);
         }
 
-        // Modify the shoot function to implement auto-targeting
+        // Modify the shoot function to better handle multiple shots and targets
         function shoot() {
             if (isGameOver) return;
             
@@ -844,70 +861,55 @@
             });
 
             // Get targets based on current powerup effects
-            const maxTargets = powerupEffects.targetCount * powerupEffects.shotCount;
+            const maxTargets = powerupEffects.targetCount;
             const targets = findTargets(playerHelicopter.position, maxTargets);
             
-            // If no targets found, shoot in player's facing direction
-            if (targets.length === 0) {
-                const direction = new THREE.Vector3(0, 0, -1);
-                direction.applyQuaternion(playerHelicopter.quaternion);
+            // Calculate spread angle based on shot count
+            const spreadAngle = Math.min(Math.PI / 4, (Math.PI / 12) * powerupEffects.shotCount); // Max 45 degrees spread
+            
+            // For each target (or direction if no targets)
+            for (let targetIndex = 0; targetIndex < targets.length || targetIndex === 0; targetIndex++) {
+                const target = targets[targetIndex];
                 
+                // Fire multiple shots in a spread pattern
                 for (let i = 0; i < powerupEffects.shotCount; i++) {
                     const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
                     bullet.position.copy(playerHelicopter.position);
                     
-                    // Add slight spread for multiple shots
-                    const spread = (powerupEffects.shotCount > 1) ? 
-                        (Math.random() - 0.5) * 0.2 : 0;
+                    let direction;
+                    if (target) {
+                        // Calculate direction to target
+                        direction = new THREE.Vector3()
+                            .subVectors(target.position, playerHelicopter.position)
+                            .normalize();
+                    } else {
+                        // Default forward direction if no target
+                        direction = new THREE.Vector3(0, 0, -1);
+                        direction.applyQuaternion(playerHelicopter.quaternion);
+                    }
                     
-                    const bulletDirection = direction.clone();
-                    bulletDirection.x += spread;
-                    bulletDirection.normalize();
+                    // Apply spread pattern
+                    if (powerupEffects.shotCount > 1) {
+                        const angleStep = spreadAngle / (powerupEffects.shotCount - 1);
+                        const angle = -spreadAngle/2 + angleStep * i;
+                        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), angle);
+                    }
                     
-                    bullet.velocity = bulletDirection.multiplyScalar(2);
+                    bullet.velocity = direction.multiplyScalar(2);
                     bullet.damage = 100 * powerupEffects.damageMultiplier;
+                    bullet.target = target; // Track target for homing if available
                     
                     scene.add(bullet);
                     bullets.push({
                         mesh: bullet,
                         velocity: bullet.velocity,
-                        damage: bullet.damage
+                        damage: bullet.damage,
+                        target: target
                     });
                 }
-                return;
-            }
-
-            // Distribute shots among available targets
-            let shotIndex = 0;
-            for (let i = 0; i < powerupEffects.shotCount; i++) {
-                const target = targets[shotIndex % targets.length];
                 
-                const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
-                bullet.position.copy(playerHelicopter.position);
-                
-                // Calculate direction to target with slight prediction
-                const direction = new THREE.Vector3();
-                direction.subVectors(target.position, playerHelicopter.position);
-                
-                // Add slight spread for multiple shots
-                direction.x += (Math.random() - 0.5) * 0.1;
-                direction.y += (Math.random() - 0.5) * 0.1;
-                direction.z += (Math.random() - 0.5) * 0.1;
-                direction.normalize();
-                
-                bullet.velocity = direction.multiplyScalar(2);
-                bullet.damage = 100 * powerupEffects.damageMultiplier;
-                bullet.target = target; // Track target for homing
-                
-                scene.add(bullet);
-                bullets.push({
-                    mesh: bullet,
-                    velocity: bullet.velocity,
-                    damage: bullet.damage,
-                    target: target
-                });
-                
-                shotIndex++;
+                // If no targets, only fire once
+                if (!target) break;
             }
         }
 
@@ -985,6 +987,95 @@
         function updateEnemies() {
             for (let i = enemies.length - 1; i >= 0; i--) {
                 const enemy = enemies[i];
+                
+                // Skip if enemy was already removed
+                if (!enemy || !enemy.parent) {
+                    enemies.splice(i, 1);
+                    continue;
+                }
+
+                // Handle boss defeat cleanup
+                if (enemy.isBoss && enemy.health <= 0 && !enemy.isBeingRemoved) {
+                    enemy.isBeingRemoved = true; // Mark as being removed to prevent multiple cleanups
+                    
+                    // Clear all timeouts associated with this boss
+                    if (enemy.spawnTimeout) {
+                        clearTimeout(enemy.spawnTimeout);
+                    }
+                    
+                    // Remove boss health display if this was the last boss
+                    const remainingBosses = enemies.filter(e => e.isBoss && e.health > 0).length;
+                    if (remainingBosses === 0) {
+                        const bossHealthContainer = document.querySelector('.boss-health-container');
+                        if (bossHealthContainer) {
+                            bossHealthContainer.remove();
+                        }
+                    } else {
+                        // Update boss health display to show the remaining boss
+                        const remainingBoss = enemies.find(e => e.isBoss && e.health > 0);
+                        if (remainingBoss) {
+                            const healthPercent = (remainingBoss.health / remainingBoss.maxHealth) * 100;
+                            document.getElementById('bossHealthValue').textContent = `${Math.ceil(healthPercent)}%`;
+                            document.getElementById('bossHealthFill').style.width = `${healthPercent}%`;
+                        }
+                    }
+                    
+                    // Clean up boss minions
+                    const bossType = enemy.bossType;
+                    const minionsToRemove = [];
+                    
+                    enemies.forEach((e, index) => {
+                        if (!e.isBoss && e.fruitType === bossType) {
+                            minionsToRemove.push(index);
+                            scene.remove(e);
+                            if (e.geometry) e.geometry.dispose();
+                            if (e.material) {
+                                if (Array.isArray(e.material)) {
+                                    e.material.forEach(m => m.dispose());
+                                } else {
+                                    e.material.dispose();
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Remove minions from array (in reverse order to maintain indices)
+                    for (let j = minionsToRemove.length - 1; j >= 0; j--) {
+                        enemies.splice(minionsToRemove[j], 1);
+                    }
+                    
+                    // Clean up the boss itself
+                    scene.remove(enemy);
+                    if (enemy.geometry) enemy.geometry.dispose();
+                    if (enemy.material) {
+                        if (Array.isArray(enemy.material)) {
+                            enemy.material.forEach(m => m.dispose());
+                        } else {
+                            enemy.material.dispose();
+                        }
+                    }
+                    
+                    // Remove from enemies array
+                    enemies.splice(i, 1);
+                    
+                    // Spawn powerups and create explosion
+                    spawnRandomPowerups(enemy.position, BOSS_CONFIG[`GIANT_${enemy.bossType}`].powerupCount);
+                    createExplosion(enemy.position, 40);
+                    
+                    // Show notification
+                    showNotification(`GIANT ${enemy.bossType} BOSS DEFEATED!`);
+                    playSound('explosion');
+                    
+                    // Reset boss flags
+                    bossSpawned[enemy.bossType.toLowerCase()] = false;
+                    warningShown[enemy.bossType.toLowerCase()] = false;
+                    
+                    // Add score
+                    score += 1000;
+                    
+                    continue;
+                }
+                
                 const helicopterPos = playerHelicopter.position.clone();
                 const enemyPos = enemy.position.clone();
                 
@@ -1035,9 +1126,8 @@
                         }
                         scene.remove(enemy);
                         enemies.splice(i, 1);
-                        continue;
+                        continue; // Skip regular enemy behavior for special moves
                     }
-                    continue; // Skip regular enemy behavior for special moves
                 }
                 
                 // Handle boss
@@ -1162,26 +1252,35 @@
             powerups.forEach((powerup, index) => {
                 const distance = playerHelicopter.position.distanceTo(powerup.position);
                 if (distance < 5) {
-                    playSound('powerup'); // Add power-up collection sound
+                    playSound('powerup');
                     const type = powerup.type;
                     
-                    // Handle different power-up types with stacking
-                    switch(type) {
-                        case 'SPEED':
-                            powerupEffects.speedMultiplier += POWERUP_TYPES.SPEED.increment;
-                            break;
-                        case 'FIRERATE':
-                            powerupEffects.fireRateMultiplier += POWERUP_TYPES.FIRERATE.increment;
-                            break;
-                        case 'DOUBLESHOT':
-                            powerupEffects.shotCount += POWERUP_TYPES.DOUBLESHOT.increment;
-                            break;
-                        case 'MULTISHOT':
-                            powerupEffects.targetCount += POWERUP_TYPES.MULTISHOT.increment;
-                            break;
-                        case 'DAMAGE':
-                            powerupEffects.damageMultiplier += POWERUP_TYPES.DAMAGE.increment;
-                            break;
+                    if (type === 'RAGE') {
+                        activateRageMode();
+                    } else {
+                        // Handle different power-up types with stacking
+                        switch(type) {
+                            case 'SPEED':
+                                powerupEffects.speedMultiplier += POWERUP_TYPES.SPEED.increment;
+                                showNotification('Speed Increased!');
+                                break;
+                            case 'FIRERATE':
+                                powerupEffects.fireRateMultiplier += POWERUP_TYPES.FIRERATE.increment;
+                                showNotification('Fire Rate Increased!');
+                                break;
+                            case 'DOUBLESHOT':
+                                powerupEffects.shotCount += POWERUP_TYPES.DOUBLESHOT.increment;
+                                showNotification(`Shots: ${powerupEffects.shotCount}x`);
+                                break;
+                            case 'MULTISHOT':
+                                powerupEffects.targetCount += POWERUP_TYPES.MULTISHOT.increment;
+                                showNotification(`Multi-Target: ${powerupEffects.targetCount}x`);
+                                break;
+                            case 'DAMAGE':
+                                powerupEffects.damageMultiplier += POWERUP_TYPES.DAMAGE.increment;
+                                showNotification('Damage Increased!');
+                                break;
+                        }
                     }
                     
                     // Proper cleanup of power-up
@@ -1194,8 +1293,11 @@
                     powerup.geometry.dispose();
                     powerup.material.dispose();
                     powerups.splice(index, 1);
-                    spawnEnemies(2);
-                    setTimeout(() => createPowerup(type), 5000);
+                    
+                    if (type !== 'RAGE') {
+                        spawnEnemies(2);
+                        setTimeout(() => createPowerup(type), 5000);
+                    }
                     
                     updateInfoDisplay();
                 }
@@ -1699,8 +1801,24 @@
             document.getElementById('finalScore').textContent = score;
             gameOverScreen.style.display = 'block';
             
+            // Exit pointer lock to show cursor
+            if (document.pointerLockElement) {
+                document.exitPointerLock();
+            }
+            
             // Stop the game
             isGameOver = true;
+            
+            // Fade out music
+            const fadeOut = setInterval(() => {
+                if (MUSIC.background.volume > 0.02) {
+                    MUSIC.background.volume -= 0.02;
+                } else {
+                    MUSIC.background.pause();
+                    MUSIC.background.volume = 0.3; // Reset volume for next game
+                    clearInterval(fadeOut);
+                }
+            }, 100);
         }
 
         function restartGame() {
@@ -1807,19 +1925,42 @@
                     clearTimeout(enemy.spawnTimeout);
                 }
             });
+            
+            // Restart music if it was stopped
+            if (MUSIC.background.paused) {
+                MUSIC.background.play().catch(e => console.log("Music play failed:", e));
+            }
+            
+            rageMode.active = false;
+            rageMode.endTime = 0;
+            rageMode.lastSpawnTime = 0;
         }
 
         // Make restartGame function globally accessible
         window.restartGame = restartGame;
 
         function showNotification(message) {
+            let container = document.querySelector('.notifications-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'notifications-container';
+                document.body.appendChild(container);
+            }
+
             const notification = document.createElement('div');
             notification.className = 'notification';
+            if (message.includes('WARNING')) {
+                notification.style.background = 'rgba(239, 68, 68, 0.95)';
+                notification.style.boxShadow = '0 4px 6px -1px rgba(239, 68, 68, 0.3)';
+            }
             notification.textContent = message;
-            document.body.appendChild(notification);
+            container.insertBefore(notification, container.firstChild); // Add new notifications at the beginning
             
             setTimeout(() => {
                 notification.remove();
+                if (container.children.length === 0) {
+                    container.remove();
+                }
             }, 2000);
         }
 
@@ -1982,22 +2123,30 @@
 
         // Add boss health display to HUD
         function addBossHealthDisplay() {
-            const hudRight = document.querySelector('.hud-right');
-            const bossHealthBar = document.createElement('div');
-            bossHealthBar.className = 'stat-bar';
-            bossHealthBar.innerHTML = `
-                <div class="stat-label">BOSS HP</div>
-                <div class="boss-health-bar">
-                    <div class="boss-health-fill" id="bossHealthFill"></div>
+            // Remove existing boss health display if any
+            const existingDisplay = document.querySelector('.boss-health-container');
+            if (existingDisplay) {
+                existingDisplay.remove();
+            }
+
+            const bossHealthContainer = document.createElement('div');
+            bossHealthContainer.className = 'boss-health-container';
+            bossHealthContainer.innerHTML = `
+                <div class="stat-bar">
+                    <div class="stat-label">BOSS HP</div>
+                    <div class="boss-health-bar">
+                        <div class="boss-health-fill" id="bossHealthFill"></div>
+                    </div>
+                    <div class="stat-value" id="bossHealthValue">100%</div>
                 </div>
-                <div class="stat-value" id="bossHealthValue">100%</div>
             `;
-            hudRight.appendChild(bossHealthBar);
+            document.body.appendChild(bossHealthContainer);
         }
 
         // Call this when spawning the boss
         function showBossHealth() {
             addBossHealthDisplay();
+            document.querySelector('.boss-health-container').style.display = 'block';
         }
 
         // Modify spawnRandomPowerups to ensure proper cleanup
@@ -2105,39 +2254,146 @@
                     break;
                     
                 case 'WATERMELON':
-                    // Seed Barrage - improved version
-                    const angleStep = (2 * Math.PI) / bossConfig.specialMove.projectileCount;
+                    // New cross boomerang attack
+                    const directions = [
+                        new THREE.Vector3(1, 0, 0),   // Right
+                        new THREE.Vector3(-1, 0, 0),  // Left
+                        new THREE.Vector3(0, 0, 1),   // Up
+                        new THREE.Vector3(0, 0, -1)   // Down
+                    ];
                     
-                    for (let i = 0; i < bossConfig.specialMove.projectileCount; i++) {
-                        const angle = angleStep * i;
-                        const seed = new THREE.Mesh(
-                            new THREE.SphereGeometry(0.8, 8, 8), // Bigger seeds
+                    directions.forEach(direction => {
+                        const watermelon = new THREE.Mesh(
+                            new THREE.SphereGeometry(2.5, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.7),
                             new THREE.MeshPhongMaterial({
-                                color: 0x111111,
-                                emissive: 0x222222,
+                                color: FRUIT_TYPES.WATERMELON.color,
+                                emissive: FRUIT_TYPES.WATERMELON.color,
+                                emissiveIntensity: 0.3,
                                 shininess: 30
                             })
                         );
                         
-                        // Add trail effect light
-                        const seedGlow = new THREE.PointLight(0x444444, 0.5, 5);
-                        seed.add(seedGlow);
+                        // Add glow effect
+                        const watermelonGlow = new THREE.PointLight(FRUIT_TYPES.WATERMELON.color, 1, 15);
+                        watermelon.add(watermelonGlow);
                         
-                        seed.position.copy(boss.position);
-                        seed.position.y = 2; // Slightly elevated
-                        seed.isSpecialMove = true;
-                        seed.damage = bossConfig.specialMove.damage;
+                        watermelon.scale.set(3, 3, 3); // Make it big
+                        watermelon.position.copy(boss.position);
+                        watermelon.position.y = 2;
+                        watermelon.isSpecialMove = true;
+                        watermelon.bossType = 'WATERMELON';
+                        watermelon.damage = bossConfig.specialMove.damage;
                         
-                        const direction = new THREE.Vector3(
-                            Math.cos(angle),
-                            0,
-                            Math.sin(angle)
+                        watermelon.phase = 0;
+                        watermelon.initialPos = boss.position.clone();
+                        watermelon.targetPos = boss.position.clone().add(
+                            direction.multiplyScalar(bossConfig.specialMove.range)
                         );
+                        watermelon.direction = direction.normalize();
+                        watermelon.speed = bossConfig.specialMove.projectileSpeed;
                         
-                        seed.velocity = direction.multiplyScalar(1.5); // Faster seeds
-                        enemies.push(seed);
-                    }
+                        enemies.push(watermelon);
+                    });
                     break;
+            }
+        }
+
+        // Add these new functions
+        function spawnRagePowerup() {
+            const currentTime = performance.now();
+            const gameTimeInMs = gameTimer * 1000; // Convert gameTimer (seconds) to milliseconds
+            
+            // Clean up old powerups that weren't collected
+            for (let i = powerups.length - 1; i >= 0; i--) {
+                const powerup = powerups[i];
+                if (powerup.type === 'RAGE' && currentTime - powerup.spawnTime > 30000) {
+                    scene.remove(powerup);
+                    powerup.children.forEach(child => {
+                        if (child.isLight) {
+                            child.dispose();
+                        }
+                    });
+                    if (powerup.geometry) powerup.geometry.dispose();
+                    if (powerup.material) powerup.material.dispose();
+                    powerups.splice(i, 1);
+                }
+            }
+            
+            // Check if it's time to spawn (after 2 minutes and every 2 minutes thereafter)
+            if (gameTimeInMs >= rageMode.spawnInterval && 
+                currentTime - rageMode.lastSpawnTime >= rageMode.spawnInterval) {
+                showNotification('RAGE POWER-UP SPAWNED!');
+                
+                const powerup = new THREE.Mesh(
+                    new THREE.TetrahedronGeometry(2, 0),
+                    new THREE.MeshPhongMaterial({
+                        color: POWERUP_TYPES.RAGE.color,
+                        emissive: POWERUP_TYPES.RAGE.color,
+                        emissiveIntensity: 0.8,
+                        shininess: 100,
+                        transparent: true,
+                        opacity: 0.9
+                    })
+                );
+                
+                powerup.position.set(
+                    Math.random() * (BOARD_SIZE - 20) - (HALF_BOARD - 10),
+                    2,
+                    Math.random() * (BOARD_SIZE - 20) - (HALF_BOARD - 10)
+                );
+                
+                powerup.type = 'RAGE';
+                powerup.spawnTime = currentTime;
+                
+                const glow = new THREE.PointLight(POWERUP_TYPES.RAGE.color, 1.5, 8);
+                powerup.add(glow);
+                
+                scene.add(powerup);
+                powerups.push(powerup);
+                
+                rageMode.lastSpawnTime = currentTime;
+            }
+            
+            setTimeout(spawnRagePowerup, 2000);
+        }
+
+        function activateRageMode() {
+            if (!rageMode.active) {
+                const oldEffects = { ...powerupEffects };
+                
+                // Limit maximum multipliers to prevent excessive calculations
+                powerupEffects.speedMultiplier = Math.min(oldEffects.speedMultiplier * rageMode.multiplier, 5.0);
+                powerupEffects.fireRateMultiplier = Math.min(oldEffects.fireRateMultiplier * rageMode.multiplier, 5.0);
+                powerupEffects.damageMultiplier = Math.min(oldEffects.damageMultiplier * rageMode.multiplier, 5.0);
+                powerupEffects.shotCount = Math.min(oldEffects.shotCount * 2, 20); // Cap shot count
+                powerupEffects.targetCount = Math.min(oldEffects.targetCount * 2, 20); // Cap target count
+                
+                rageMode.active = true;
+                rageMode.endTime = performance.now() + rageMode.duration;
+                
+                showNotification('RAGE MODE ACTIVATED!');
+                
+                // Simplify visual effects
+                playerHelicopter.children.forEach(child => {
+                    if (child.material) {
+                        child.material.emissive.setHex(0xff0000);
+                        child.material.emissiveIntensity = 0.5;
+                    }
+                });
+                
+                setTimeout(() => {
+                    powerupEffects = { ...oldEffects };
+                    rageMode.active = false;
+                    
+                    playerHelicopter.children.forEach(child => {
+                        if (child.material) {
+                            child.material.emissive.setHex(0x000000);
+                            child.material.emissiveIntensity = 0;
+                        }
+                    });
+                    
+                    showNotification('RAGE MODE ENDED');
+                }, rageMode.duration);
             }
         }
     </script>
