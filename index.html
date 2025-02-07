@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Fruit Killer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
@@ -242,6 +243,142 @@
             gap: 8px;
             z-index: 1001;
         }
+        
+        #startMenu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            pointer-events: auto;
+        }
+
+        .game-title {
+            color: #ef4444;
+            font-size: 84px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            text-shadow: 0 0 30px rgba(239, 68, 68, 0.6);
+            animation: pulse 2s infinite;
+            letter-spacing: -2px;
+        }
+
+        .game-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 48px;
+            text-align: center;
+            line-height: 1.6;
+            max-width: 600px;
+        }
+
+        .start-button {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 20px 64px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 24px;
+            font-weight: 600;
+            margin-top: 32px;
+            transition: all 0.3s ease;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            box-shadow: 0 20px 40px -15px rgba(239, 68, 68, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 25px 50px -12px rgba(239, 68, 68, 0.6);
+        }
+
+        .start-button:active {
+            transform: translateY(0);
+            box-shadow: 0 10px 30px -10px rgba(239, 68, 68, 0.4);
+        }
+
+        .start-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                45deg,
+                transparent,
+                rgba(255, 255, 255, 0.1),
+                transparent
+            );
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+        }
+
+        .game-features {
+            display: flex;
+            gap: 32px;
+            margin-top: 48px;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            width: 200px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .feature-icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+            color: #ef4444;
+        }
+
+        .feature-title {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        @keyframes shine {
+            0% { transform: rotate(45deg) translateX(-200%); }
+            100% { transform: rotate(45deg) translateX(200%); }
+        }
+
+        .hud-container, .multiplier-container {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .hud-container.visible, .multiplier-container.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
     </style>
 </head>
 <body>
@@ -299,6 +436,31 @@
             <div class="stat-label">TARGETS</div>
             <div class="stat-value" id="targetCountValue">1x</div>
         </div>
+    </div>
+    <div id="startMenu">
+        <h1 class="game-title">FRUIT KILLER</h1>
+        <p class="game-subtitle">
+            Take control of your combat helicopter and face waves of deadly fruit in this 
+            action-packed arcade shooter. Can you survive the fruity apocalypse?
+        </p>
+        <div class="game-features">
+            <div class="feature-card">
+                <div class="feature-icon">🚁</div>
+                <div class="feature-title">Dynamic Combat</div>
+                <div class="feature-desc">Control your helicopter with precision in intense aerial battles</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-title">Power-ups</div>
+                <div class="feature-desc">Collect upgrades to enhance your firepower and abilities</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👑</div>
+                <div class="feature-title">Boss Battles</div>
+                <div class="feature-desc">Face epic boss fights against giant mutant fruits</div>
+            </div>
+        </div>
+        <button class="start-button" onclick="startGame()">START GAME</button>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
     <script>
@@ -513,15 +675,107 @@
         // Add after other global variables
         let isGameStarted = false;
 
+        // Modify the cinematicCamera settings
+        let cinematicCamera = {
+            radius: 100,  // Increased from 60
+            angle: 0,
+            speed: 0.0005,
+            height: 50  // Increased from 30
+        };
+
+        // Add after other global variables
+        const startMenuFruits = [];
+
+        // Add this function after init()
+        function createStartMenuFruits() {
+            const fruitTypes = Object.keys(FRUIT_TYPES);
+            const fruitsCount = 15; // Number of floating fruits
+            
+            for (let i = 0; i < fruitsCount; i++) {
+                const randomType = fruitTypes[Math.floor(Math.random() * fruitTypes.length)];
+                const fruitData = FRUIT_TYPES[randomType];
+                
+                let geometry;
+                switch (randomType) {
+                    case 'BANANA':
+                        geometry = new THREE.TorusGeometry(0.5, 0.2, 8, 16, Math.PI);
+                        break;
+                    case 'APPLE':
+                        geometry = new THREE.SphereGeometry(0.5, 16, 16);
+                        break;
+                    case 'WATERMELON':
+                        geometry = new THREE.SphereGeometry(0.8, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.7);
+                        break;
+                    case 'ORANGE':
+                        geometry = new THREE.SphereGeometry(0.5, 16, 16);
+                        break;
+                    case 'STRAWBERRY':
+                        geometry = new THREE.ConeGeometry(0.4, 0.8, 16);
+                        break;
+                    case 'PINEAPPLE':
+                        geometry = new THREE.CylinderGeometry(0.3, 0.3, 1, 8);
+                        break;
+                }
+
+                const material = new THREE.MeshPhongMaterial({
+                    color: fruitData.color,
+                    emissive: fruitData.color,
+                    emissiveIntensity: 0.2,
+                    shininess: 30
+                });
+
+                const fruit = new THREE.Mesh(geometry, material);
+                
+                // Random position within view
+                fruit.position.set(
+                    (Math.random() - 0.5) * 100,
+                    Math.random() * 40 + 10,
+                    (Math.random() - 0.5) * 100
+                );
+                
+                // Random rotation
+                fruit.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                
+                // Add animation properties
+                fruit.userData = {
+                    rotationSpeed: {
+                        x: (Math.random() - 0.5) * 0.02,
+                        y: (Math.random() - 0.5) * 0.02,
+                        z: (Math.random() - 0.5) * 0.02
+                    },
+                    floatSpeed: Math.random() * 0.01 + 0.005,
+                    floatOffset: Math.random() * Math.PI * 2,
+                    originalY: fruit.position.y,
+                    floatAmplitude: Math.random() * 2 + 1,
+                    scale: fruitData.scale * 2
+                };
+                
+                fruit.scale.set(
+                    fruit.userData.scale,
+                    fruit.userData.scale,
+                    fruit.userData.scale
+                );
+                
+                scene.add(fruit);
+                startMenuFruits.push(fruit);
+            }
+        }
+
         function animate() {
-            if (isGameOver) return;
+            if (!isGameStarted || isGameOver) return;
             
             const currentTime = performance.now();
             const deltaTime = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
             
-            // Update game timer regardless of player actions
-            gameTimer += deltaTime;
+            // Only update game timer after game has started
+            if (isGameStarted && !isGameOver) {
+                gameTimer += deltaTime;
+            }
             
             // Calculate FPS
             frameCount++;
@@ -552,6 +806,11 @@
             powerups.forEach(powerup => {
                 powerup.rotation.y += 0.02;
                 powerup.position.y = 2 + Math.sin(Date.now() * 0.003) * 0.3;
+                
+                // Make label sprite face camera
+                if (powerup.userData.sprite) {
+                    powerup.userData.sprite.quaternion.copy(camera.quaternion);
+                }
             });
             
             renderer.render(scene, camera);
@@ -713,6 +972,11 @@
 
             // Start rage powerup spawn cycle
             spawnRagePowerup();
+
+            // Start cinematic camera animation
+            animateCinematicCamera();
+
+            createStartMenuFruits();
         }
 
         function createSkybox() {
@@ -856,7 +1120,19 @@
             
             playSound('shoot');
             
-            const bulletGeometry = new THREE.SphereGeometry(0.2, 8, 8);
+            // Calculate total multiplier including rage mode effects
+            const totalMultiplier = (powerupEffects.speedMultiplier - 1) + 
+                                   (powerupEffects.fireRateMultiplier - 1) + 
+                                   (powerupEffects.damageMultiplier - 1) +
+                                   (powerupEffects.shotCount - 1) +
+                                   (powerupEffects.targetCount - 1);
+            
+            // More aggressive size reduction for high multipliers
+            const bulletSize = totalMultiplier <= 0 ? 
+                0.6 : // Normal size
+                Math.max(0.08, 0.6 * (1 / Math.pow(totalMultiplier, 0.4))); // More aggressive reduction
+            
+            const bulletGeometry = new THREE.SphereGeometry(bulletSize, 8, 8);
             const bulletMaterial = new THREE.MeshPhongMaterial({
                 color: 0x00ffff,
                 emissive: 0x00ffff,
@@ -1292,6 +1568,15 @@
                         if (child.isLight) {
                             child.dispose();
                         }
+                        if (child.isMesh || child.isSprite) {
+                            child.material.dispose();
+                            if (child.material.map) {
+                                child.material.map.dispose();
+                            }
+                            if (child.geometry) {
+                                child.geometry.dispose();
+                            }
+                        }
                     });
                     powerup.geometry.dispose();
                     powerup.material.dispose();
@@ -1381,25 +1666,61 @@
             
             powerup.type = type;
             
-            // Add glowing effect for all powerups
-            // Inner glow
+            // Add glowing effect
             const innerGlow = new THREE.PointLight(POWERUP_TYPES[type].color, 1, 3);
             innerGlow.position.set(0, 0, 0);
             powerup.add(innerGlow);
             
-            // Outer glow
             const outerGlow = new THREE.PointLight(POWERUP_TYPES[type].color, 0.5, 6);
             outerGlow.position.set(0, 0, 0);
             powerup.add(outerGlow);
             
-            // Add pulsing animation data
+            // Create floating text label
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 512;  // Increased from 256
+            canvas.height = 256; // Increased from 128
+            
+            // Set text style with larger font
+            context.font = 'bold 80px Plus Jakarta Sans'; // Increased from 40px
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            // Make background fully transparent
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Add glow effect
+            context.shadowBlur = 20;  // Increased blur for better visibility
+            context.shadowColor = `#${POWERUP_TYPES[type].color.toString(16).padStart(6, '0')}`;
+            
+            // Draw text
+            context.fillStyle = '#FFFFFF';
+            context.fillText(type, canvas.width/2, canvas.height/2);
+            
+            // Create sprite from canvas
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.premultiplyAlpha = false; // Important for transparency
+            const spriteMaterial = new THREE.SpriteMaterial({
+                map: texture,
+                transparent: true,
+                depthTest: false // Ensures text is always visible
+            });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.scale.set(8, 4, 1); // Doubled scale from previous values
+            sprite.position.y = 4; // Raised position above powerup
+            
+            // Add sprite to powerup
+            powerup.add(sprite);
+            
+            // Add animation data
             powerup.userData = {
                 initialY: powerup.position.y,
                 glowIntensity: {
                     inner: 1,
                     outer: 0.5
                 },
-                phase: Math.random() * Math.PI * 2 // Random starting phase for variety
+                phase: Math.random() * Math.PI * 2,
+                sprite: sprite // Store reference to sprite for animation
             };
             
             scene.add(powerup);
@@ -2361,44 +2682,102 @@
         }
 
         function activateRageMode() {
-            if (!rageMode.active) {
-                const oldEffects = { ...powerupEffects };
+            if (rageMode.active) return;
+            
+            rageMode.active = true;
+            rageMode.endTime = performance.now() + rageMode.duration;
+            
+            // Store previous values
+            const previousEffects = { ...powerupEffects };
+            
+            // Apply rage mode multipliers with reduced bullet size
+            Object.keys(powerupEffects).forEach(key => {
+                powerupEffects[key] *= rageMode.multiplier;
+            });
+            
+            showNotification('RAGE MODE ACTIVATED!');
+            
+            // Reset after duration
+            setTimeout(() => {
+                rageMode.active = false;
+                powerupEffects = { ...previousEffects };
+                showNotification('Rage Mode Ended');
+            }, rageMode.duration);
+        }
+
+        // Modify the animateCinematicCamera function to add a slight tilt
+        function animateCinematicCamera() {
+            if (!isGameStarted) {
+                cinematicCamera.angle += cinematicCamera.speed;
                 
-                // Limit maximum multipliers to prevent excessive calculations
-                powerupEffects.speedMultiplier = Math.min(oldEffects.speedMultiplier * rageMode.multiplier, 5.0);
-                powerupEffects.fireRateMultiplier = Math.min(oldEffects.fireRateMultiplier * rageMode.multiplier, 5.0);
-                powerupEffects.damageMultiplier = Math.min(oldEffects.damageMultiplier * rageMode.multiplier, 5.0);
-                powerupEffects.shotCount = Math.min(oldEffects.shotCount * 2, 20); // Cap shot count
-                powerupEffects.targetCount = Math.min(oldEffects.targetCount * 2, 20); // Cap target count
+                camera.position.x = Math.cos(cinematicCamera.angle) * cinematicCamera.radius;
+                camera.position.z = Math.sin(cinematicCamera.angle) * cinematicCamera.radius;
+                camera.position.y = cinematicCamera.height;
                 
-                rageMode.active = true;
-                rageMode.endTime = performance.now() + rageMode.duration;
+                // Adjust lookAt to point slightly higher
+                camera.lookAt(0, 15, 0); // Changed from (0, 5, 0)
                 
-                showNotification('RAGE MODE ACTIVATED!');
-                
-                // Simplify visual effects
-                playerHelicopter.children.forEach(child => {
-                    if (child.material) {
-                        child.material.emissive.setHex(0xff0000);
-                        child.material.emissiveIntensity = 0.5;
-                    }
+                // Animate floating fruits
+                startMenuFruits.forEach(fruit => {
+                    // Rotate
+                    fruit.rotation.x += fruit.userData.rotationSpeed.x;
+                    fruit.rotation.y += fruit.userData.rotationSpeed.y;
+                    fruit.rotation.z += fruit.userData.rotationSpeed.z;
+                    
+                    // Float up and down
+                    const floatY = Math.sin(Date.now() * fruit.userData.floatSpeed + fruit.userData.floatOffset) 
+                        * fruit.userData.floatAmplitude;
+                    fruit.position.y = fruit.userData.originalY + floatY;
                 });
                 
-                setTimeout(() => {
-                    powerupEffects = { ...oldEffects };
-                    rageMode.active = false;
-                    
-                    playerHelicopter.children.forEach(child => {
-                        if (child.material) {
-                            child.material.emissive.setHex(0x000000);
-                            child.material.emissiveIntensity = 0;
-                        }
-                    });
-                    
-                    showNotification('RAGE MODE ENDED');
-                }, rageMode.duration);
+                renderer.render(scene, camera);
+                requestAnimationFrame(animateCinematicCamera);
             }
         }
+
+        // Modify the startGame function
+        function startGame() {
+            document.getElementById('startMenu').style.display = 'none';
+            
+            // Show HUD with animation
+            document.querySelector('.hud-container').classList.add('visible');
+            document.querySelector('.multiplier-container').classList.add('visible');
+            
+            isGameStarted = true;
+            
+            // Reset game timer and last time
+            gameTimer = 0;
+            lastTime = performance.now();
+            
+            // Reset difficulty multiplier
+            difficultyMultiplier = 1.0;
+            
+            // Reset camera position for gameplay
+            camera.position.set(0, 40, 40);
+            camera.lookAt(playerHelicopter.position);
+            
+            // Start game animation
+            animate();
+            
+            // Request pointer lock
+            document.body.requestPointerLock();
+            
+            // Start music
+            if (MUSIC.background.paused) {
+                MUSIC.background.play().catch(e => console.log("Music play failed:", e));
+            }
+            
+            // Remove start menu fruits
+            startMenuFruits.forEach(fruit => {
+                scene.remove(fruit);
+                if (fruit.geometry) fruit.geometry.dispose();
+                if (fruit.material) fruit.material.dispose();
+            });
+            startMenuFruits.length = 0;
+        }
+
+        // Make startGame function globally accessible
+        window.startGame = startGame;
     </script>
 </body>
 </html>
