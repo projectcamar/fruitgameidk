@@ -379,6 +379,57 @@
             opacity: 1;
             pointer-events: auto;
         }
+
+        // Add after other styles
+        .mobile-controls {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+        }
+
+        .mobile-button {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .btn-up {
+            bottom: 70px;
+            left: 70px;
+        }
+
+        .btn-down {
+            bottom: 0;
+            left: 70px;
+        }
+
+        .btn-left {
+            bottom: 35px;
+            left: 0;
+        }
+
+        .btn-right {
+            bottom: 35px;
+            left: 140px;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-controls {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
@@ -461,6 +512,12 @@
             </div>
         </div>
         <button class="start-button" onclick="startGame()">START GAME</button>
+    </div>
+    <div class="mobile-controls">
+        <div class="mobile-button btn-up">⬆️</div>
+        <div class="mobile-button btn-down">⬇️</div>
+        <div class="mobile-button btn-left">⬅️</div>
+        <div class="mobile-button btn-right">➡️</div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
     <script>
@@ -793,15 +850,6 @@
             updateTrail();
             updateInfoDisplay();
             
-            // Handle manual shooting with updated fire rate
-            if (isMouseDown) {
-                const actualFireRate = fireRate / powerupEffects.fireRateMultiplier;
-                if (currentTime - lastFireTime >= actualFireRate) {
-                    shoot();
-                    lastFireTime = currentTime;
-                }
-            }
-            
             // Animate power-ups
             powerups.forEach(powerup => {
                 powerup.rotation.y += 0.02;
@@ -977,6 +1025,40 @@
             animateCinematicCamera();
 
             createStartMenuFruits();
+
+            // Add mobile controls event listeners
+            if ('ontouchstart' in window) {
+                const buttons = {
+                    up: document.querySelector('.btn-up'),
+                    down: document.querySelector('.btn-down'),
+                    left: document.querySelector('.btn-left'),
+                    right: document.querySelector('.btn-right')
+                };
+
+                const handleTouch = (button, isPressed) => {
+                    switch(button) {
+                        case 'up': moveForward = isPressed; break;
+                        case 'down': moveBackward = isPressed; break;
+                        case 'left': moveLeft = isPressed; break;
+                        case 'right': moveRight = isPressed; break;
+                    }
+                };
+
+                Object.entries(buttons).forEach(([direction, button]) => {
+                    button.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        handleTouch(direction, true);
+                    });
+
+                    button.addEventListener('touchend', (e) => {
+                        e.preventDefault();
+                        handleTouch(direction, false);
+                    });
+                });
+            }
+
+            // Start auto-attack
+            startAutoAttack();
         }
 
         function createSkybox() {
@@ -2778,6 +2860,17 @@
 
         // Make startGame function globally accessible
         window.startGame = startGame;
+
+        // Add auto-attack functionality
+        function startAutoAttack() {
+            const AUTO_FIRE_RATE = 200; // Milliseconds between shots
+            
+            setInterval(() => {
+                if (isGameStarted && !isGameOver) {
+                    shoot();
+                }
+            }, AUTO_FIRE_RATE);
+        }
     </script>
 </body>
 </html>
