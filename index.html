@@ -385,8 +385,11 @@
             display: none;
             position: fixed;
             bottom: 20px;
-            left: 20px;
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
             z-index: 1000;
+            width: 180px; /* Container width */
+            height: 180px; /* Container height */
         }
 
         .mobile-button {
@@ -405,24 +408,25 @@
             touch-action: none;
         }
 
+        /* Updated button positions to be centered */
         .btn-up {
-            bottom: 70px;
-            left: 70px;
+            left: 60px; /* Center horizontally */
+            top: 0;
         }
 
         .btn-down {
+            left: 60px; /* Center horizontally */
             bottom: 0;
-            left: 70px;
         }
 
         .btn-left {
-            bottom: 35px;
             left: 0;
+            top: 60px; /* Center vertically */
         }
 
         .btn-right {
-            bottom: 35px;
-            left: 140px;
+            right: 0;
+            top: 60px; /* Center vertically */
         }
 
         @media (max-width: 768px) {
@@ -514,10 +518,10 @@
         <button class="start-button" onclick="startGame()">START GAME</button>
     </div>
     <div class="mobile-controls">
-        <div class="mobile-button btn-up">⬆️</div>
-        <div class="mobile-button btn-down">⬇️</div>
-        <div class="mobile-button btn-left">⬅️</div>
-        <div class="mobile-button btn-right">➡️</div>
+        <div class="mobile-button btn-up">W</div>
+        <div class="mobile-button btn-down">S</div>
+        <div class="mobile-button btn-left">A</div>
+        <div class="mobile-button btn-right">D</div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
     <script>
