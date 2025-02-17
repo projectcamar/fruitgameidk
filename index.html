@@ -380,63 +380,43 @@
             pointer-events: auto;
         }
 
-        // Add after other styles
-        .mobile-controls {
-            display: none;
+        /* Add after existing styles */
+        .analog-container {
             position: fixed;
-            bottom: 20px;
+            bottom: 100px;
             left: 50%;
-            transform: translateX(-50%); /* Center horizontally */
+            transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
+            background: rgba(2, 6, 23, 0.5);
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            touch-action: none;
             z-index: 1000;
-            width: 180px; /* Container width */
-            height: 180px; /* Container height */
+            backdrop-filter: blur(8px);
         }
 
-        .mobile-button {
+        .analog-stick {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             width: 60px;
             height: 60px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            background: rgba(239, 68, 68, 0.8);
             border-radius: 50%;
-            position: absolute;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            user-select: none;
-            touch-action: none;
-        }
-
-        /* Updated button positions to be centered */
-        .btn-up {
-            left: 60px; /* Center horizontally */
-            top: 0;
-        }
-
-        .btn-down {
-            left: 60px; /* Center horizontally */
-            bottom: 0;
-        }
-
-        .btn-left {
-            left: 0;
-            top: 60px; /* Center vertically */
-        }
-
-        .btn-right {
-            right: 0;
-            top: 60px; /* Center vertically */
-        }
-
-        @media (max-width: 768px) {
-            .mobile-controls {
-                display: block;
-            }
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
         }
     </style>
 </head>
 <body>
+    <!-- Add after other UI elements but before scripts -->
+    <div class="analog-container">
+        <div class="analog-stick"></div>
+    </div>
+
     <div class="hud-container">
         <div class="hud-left">
             <div class="stat-bar">
@@ -516,12 +496,6 @@
             </div>
         </div>
         <button class="start-button" onclick="startGame()">START GAME</button>
-    </div>
-    <div class="mobile-controls">
-        <div class="mobile-button btn-up">W</div>
-        <div class="mobile-button btn-down">S</div>
-        <div class="mobile-button btn-left">A</div>
-        <div class="mobile-button btn-right">D</div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
     <script>
@@ -854,6 +828,15 @@
             updateTrail();
             updateInfoDisplay();
             
+            // Handle manual shooting with updated fire rate
+            if (isMouseDown) {
+                const actualFireRate = fireRate / powerupEffects.fireRateMultiplier;
+                if (currentTime - lastFireTime >= actualFireRate) {
+                    shoot();
+                    lastFireTime = currentTime;
+                }
+            }
+            
             // Animate power-ups
             powerups.forEach(powerup => {
                 powerup.rotation.y += 0.02;
@@ -998,7 +981,7 @@
             document.addEventListener('mousemove', onMouseMove);
             document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock;
             document.addEventListener('click', function() {
-                document.body.requestPointerLock();
+                // Remove pointer lock request
             });
 
             // Window resize
@@ -1030,39 +1013,66 @@
 
             createStartMenuFruits();
 
-            // Add mobile controls event listeners
-            if ('ontouchstart' in window) {
-                const buttons = {
-                    up: document.querySelector('.btn-up'),
-                    down: document.querySelector('.btn-down'),
-                    left: document.querySelector('.btn-left'),
-                    right: document.querySelector('.btn-right')
-                };
-
-                const handleTouch = (button, isPressed) => {
-                    switch(button) {
-                        case 'up': moveForward = isPressed; break;
-                        case 'down': moveBackward = isPressed; break;
-                        case 'left': moveLeft = isPressed; break;
-                        case 'right': moveRight = isPressed; break;
-                    }
-                };
-
-                Object.entries(buttons).forEach(([direction, button]) => {
-                    button.addEventListener('touchstart', (e) => {
-                        e.preventDefault();
-                        handleTouch(direction, true);
-                    });
-
-                    button.addEventListener('touchend', (e) => {
-                        e.preventDefault();
-                        handleTouch(direction, false);
-                    });
-                });
-            }
+            // Add analog stick controls
+            const analogContainer = document.querySelector('.analog-container');
+            const analogKnob = document.querySelector('.analog-stick');
+            
+            const updateAnalogPosition = (e) => {
+                if (!analogStick.active) return;
+                
+                const rect = analogContainer.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                // Calculate distance from center
+                let dx = (e.type === 'touchmove' ? e.touches[0].clientX : e.clientX) - centerX;
+                let dy = (e.type === 'touchmove' ? e.touches[0].clientY : e.clientY) - centerY;
+                
+                // Limit to container radius
+                const maxRadius = rect.width / 2 - analogKnob.offsetWidth / 2;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance > maxRadius) {
+                    const angle = Math.atan2(dy, dx);
+                    dx = Math.cos(angle) * maxRadius;
+                    dy = Math.sin(angle) * maxRadius;
+                }
+                
+                // Update knob position
+                analogKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+                
+                // Update movement values (-1 to 1)
+                analogStick.moveX = dx / maxRadius;
+                analogStick.moveY = dy / maxRadius;
+            };
+            
+            const startAnalog = (e) => {
+                analogStick.active = true;
+                updateAnalogPosition(e);
+            };
+            
+            const endAnalog = () => {
+                analogStick.active = false;
+                analogStick.moveX = 0;
+                analogStick.moveY = 0;
+                analogKnob.style.transform = 'translate(0, 0)';
+            };
+            
+            // Mouse events
+            analogContainer.addEventListener('mousedown', startAnalog);
+            document.addEventListener('mousemove', updateAnalogPosition);
+            document.addEventListener('mouseup', endAnalog);
+            
+            // Touch events
+            analogContainer.addEventListener('touchstart', startAnalog);
+            document.addEventListener('touchmove', updateAnalogPosition);
+            document.addEventListener('touchend', endAnalog);
 
             // Start auto-attack
-            startAutoAttack();
+            setInterval(() => {
+                if (isGameStarted && !isGameOver) {
+                    shoot();
+                }
+            }, 1000 / powerupEffects.fireRateMultiplier);
         }
 
         function createSkybox() {
@@ -1316,17 +1326,10 @@
             const currentSpeed = baseSpeed * powerupEffects.speedMultiplier * sprintMultiplier;
             const nextPosition = playerHelicopter.position.clone();
 
-            if (moveForward) {
-                nextPosition.z -= currentSpeed;
-            }
-            if (moveBackward) {
-                nextPosition.z += currentSpeed;
-            }
-            if (moveLeft) {
-                nextPosition.x -= currentSpeed;
-            }
-            if (moveRight) {
-                nextPosition.x += currentSpeed;
+            // Use analog values for movement
+            if (analogStick.moveX !== 0 || analogStick.moveY !== 0) {
+                nextPosition.x += analogStick.moveX * currentSpeed;
+                nextPosition.z += analogStick.moveY * currentSpeed;
             }
 
             // Check boundaries before applying movement
@@ -2865,16 +2868,16 @@
         // Make startGame function globally accessible
         window.startGame = startGame;
 
-        // Add auto-attack functionality
-        function startAutoAttack() {
-            const AUTO_FIRE_RATE = 200; // Milliseconds between shots
-            
-            setInterval(() => {
-                if (isGameStarted && !isGameOver) {
-                    shoot();
-                }
-            }, AUTO_FIRE_RATE);
-        }
+        // Add after other global variables
+        let analogStick = {
+            active: false,
+            centerX: 0,
+            centerY: 0,
+            knobX: 0,
+            knobY: 0,
+            moveX: 0,
+            moveY: 0
+        };
     </script>
 </body>
 </html>
