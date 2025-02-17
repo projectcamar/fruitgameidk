@@ -10,10 +10,6 @@
             margin: 0; 
             overflow: hidden;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
         }
 
         #info { position: absolute; top: 10px; left: 10px; color: white; }
@@ -397,6 +393,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            pointer-events: auto; /* Make sure it's clickable */
         }
 
         .analog-stick {
@@ -405,10 +402,11 @@
             background: rgba(255, 255, 255, 0.95);
             border-radius: 50%;
             position: absolute;
-            cursor: pointer;
+            cursor: move; /* Show move cursor */
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: transform 0.1s ease-out;
             border: 2px solid rgba(255, 255, 255, 0.5);
+            pointer-events: auto; /* Make sure it's clickable */
         }
 
         /* Adjust multiplier container to not overlap with analog */
@@ -2836,9 +2834,6 @@
             // Start game animation
             animate();
             
-            // Request pointer lock
-            document.body.requestPointerLock();
-            
             // Start music
             if (MUSIC.background.paused) {
                 MUSIC.background.play().catch(e => console.log("Music play failed:", e));
@@ -2886,7 +2881,9 @@
         }
 
         function handleAnalogStart(e) {
-            e.preventDefault();
+            if (e.type === 'touchstart') {
+                e.preventDefault();
+            }
             analogStick.active = true;
 
             const containerRect = analogStick.container.getBoundingClientRect();
@@ -2904,7 +2901,9 @@
         }
 
         function handleAnalogMove(e) {
-            e.preventDefault();
+            if (e.type === 'touchmove') {
+                e.preventDefault();
+            }
             if (!analogStick.active) return;
 
             if (e.type === 'touchmove') {
@@ -2918,7 +2917,9 @@
         }
 
         function handleAnalogEnd(e) {
-            e.preventDefault();
+            if (e.type === 'touchend' || e.type === 'touchcancel') {
+                e.preventDefault();
+            }
             analogStick.active = false;
             analogStick.touchId = null;
             analogStick.stick.style.transform = 'translate(-50%, -50%)';
