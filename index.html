@@ -145,7 +145,7 @@
         }
         .multiplier-container {
             position: fixed;
-            bottom: 24px;
+            bottom: 220px; /* Move up to make room for analog stick */
             left: 24px;
             background: rgba(2, 6, 23, 0.95);
             padding: 12px;
@@ -383,120 +383,64 @@
         /* Add after existing styles */
         .analog-container {
             position: fixed;
-            bottom: 100px;
+            bottom: 20px; /* Moved closer to bottom */
             left: 50%;
             transform: translateX(-50%);
-            width: 150px;
-            height: 150px;
-            background: rgba(2, 6, 23, 0.5);
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            touch-action: manipulation;
-            z-index: 1000;
-            backdrop-filter: blur(8px);
-            pointer-events: auto;
-        }
-
-        .analog-stick {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60px;
-            height: 60px;
-            background: rgba(239, 68, 68, 0.8);
+            width: 180px; /* Made larger */
+            height: 180px;
+            background: rgba(2, 6, 23, 0.75); /* Made more visible */
             border-radius: 50%;
             border: 2px solid rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-        }
-
-        @media (max-width: 768px) {
-            .analog-container {
-                bottom: 50px;
-                width: 120px;
-                height: 120px;
-            }
-            
-            .analog-stick {
-                width: 48px;
-                height: 48px;
-            }
-            
-            .hud-container {
-                padding: 8px;
-            }
-            
-            .hud-left, .hud-right {
-                min-width: auto;
-                padding: 8px;
-            }
-            
-            .stat-label {
-                width: auto;
-                font-size: 12px;
-            }
-            
-            .stat-value {
-                font-size: 12px;
-                min-width: 40px;
-            }
-        }
-
-        .sprint-button {
-            position: fixed;
-            bottom: 100px;
-            left: calc(50% - 200px); /* Position to the left of analog stick */
-            width: 80px;
-            height: 80px;
-            background: rgba(239, 68, 68, 0.8);
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            touch-action: manipulation;
-            z-index: 1000;
-            backdrop-filter: blur(8px);
+            touch-action: none;
+            z-index: 1002; /* Ensure it's above other elements */
+            backdrop-filter: blur(4px);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-            pointer-events: auto;
         }
-        
-        .sprint-button.active {
-            background: rgba(239, 68, 68, 1);
-            box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+
+        .analog-stick {
+            width: 80px; /* Made larger */
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s ease-out;
+            border: 2px solid rgba(255, 255, 255, 0.5);
         }
-        
-        .sprint-button.cooldown {
-            background: rgba(100, 100, 100, 0.8);
-            box-shadow: none;
+
+        /* Adjust multiplier container to not overlap with analog */
+        .multiplier-container {
+            bottom: 220px; /* Move up to make room for analog stick */
         }
-        
+
+        /* Mobile adjustments */
         @media (max-width: 768px) {
             .analog-container {
-                bottom: 50px;
-                width: 120px;
-                height: 120px;
+                width: 150px;
+                height: 150px;
+                bottom: 30px;
             }
-            
-            .sprint-button {
-                bottom: 50px;
-                left: calc(50% - 160px);
+
+            .analog-stick {
                 width: 60px;
                 height: 60px;
-                font-size: 12px;
             }
-            
+
+            .multiplier-container {
+                bottom: 200px;
+            }
+        }
+
+        /* Only hide on desktop with mouse */
+        @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+            .analog-container {
+                display: none;
+            }
         }
     </style>
-    <!-- Add these meta tags in the head section -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
     <!-- Add after other UI elements but before scripts -->
@@ -907,15 +851,7 @@
                 lastFpsUpdate = currentTime;
             }
             
-            // Throttle frame rate on mobile
-            if (window.innerWidth <= 768) {
-                setTimeout(() => {
-                    requestAnimationFrame(animate);
-                }, 1000 / 30); // Cap at 30 FPS on mobile
-            } else {
-                requestAnimationFrame(animate);
-            }
-            
+            requestAnimationFrame(animate);
             updatePlayer();
             updateEnemies();
             updateBullets();
@@ -949,20 +885,16 @@
         // Modify handleSprint to not rely on updatePlayer calls
         function handleSprint() {
             const currentTime = performance.now();
-            const sprintButton = document.querySelector('.sprint-button');
             
             // Update sprint status
             if (isSprintActive && currentTime > sprintEndTime) {
                 isSprintActive = false;
                 sprintCooldownEndTime = currentTime + sprintCooldown;
-                sprintButton.classList.remove('active');
-                sprintButton.classList.add('cooldown');
             }
             
             // Update cooldown status
             if (!canSprint && currentTime > sprintCooldownEndTime) {
                 canSprint = true;
-                sprintButton.classList.remove('cooldown');
             }
             
             // Activate sprint if conditions are met
@@ -970,18 +902,6 @@
                 isSprintActive = true;
                 canSprint = false;
                 sprintEndTime = currentTime + sprintDuration;
-                sprintButton.classList.add('active');
-            }
-            
-            // Update sprint button text
-            if (!canSprint) {
-                const cooldownRemaining = Math.ceil((sprintCooldownEndTime - currentTime) / 1000);
-                sprintButton.textContent = cooldownRemaining;
-            } else if (isSprintActive) {
-                const sprintRemaining = Math.ceil((sprintEndTime - currentTime) / 1000);
-                sprintButton.textContent = sprintRemaining;
-            } else {
-                sprintButton.textContent = 'Sprint';
             }
             
             return isSprintActive ? 2.0 : 1.0;
@@ -998,7 +918,6 @@
             camera.lookAt(0, 0, 0);
             renderer = new THREE.WebGLRenderer();
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = false; // Disable shadows for better performance
             document.body.appendChild(renderer.domElement);
 
             // Lighting
@@ -1093,7 +1012,7 @@
             document.addEventListener('mousemove', onMouseMove);
             document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock;
             document.addEventListener('click', function() {
-                // Remove pointer lock request
+                document.body.requestPointerLock();
             });
 
             // Window resize
@@ -1125,98 +1044,16 @@
 
             createStartMenuFruits();
 
-            // Add analog stick controls
-            const analogContainer = document.querySelector('.analog-container');
-            const analogKnob = document.querySelector('.analog-stick');
-            
-            const updateAnalogPosition = (e) => {
-                e.preventDefault(); // Prevent default scrolling
-                if (!analogStick.active) return;
-                
-                const rect = analogContainer.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                
-                // Get correct coordinates for both mouse and touch events
-                const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-                const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-                
-                // Calculate distance from center
-                let dx = clientX - centerX;
-                let dy = clientY - centerY;
-                
-                // Limit to container radius
-                const maxRadius = rect.width / 2 - analogKnob.offsetWidth / 2;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance > maxRadius) {
-                    const angle = Math.atan2(dy, dx);
-                    dx = Math.cos(angle) * maxRadius;
-                    dy = Math.sin(angle) * maxRadius;
-                }
-                
-                // Update knob position
-                analogKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-                
-                // Update movement values (-1 to 1)
-                analogStick.moveX = dx / maxRadius;
-                analogStick.moveY = dy / maxRadius;
-            };
-            
-            const startAnalog = (e) => {
-                e.preventDefault(); // Prevent default behavior
-                analogStick.active = true;
-                updateAnalogPosition(e);
-            };
-            
-            const endAnalog = () => {
-                analogStick.active = false;
-                analogStick.moveX = 0;
-                analogStick.moveY = 0;
-                analogKnob.style.transform = 'translate(0, 0)';
-            };
-            
-            // Mouse events
-            analogContainer.addEventListener('mousedown', startAnalog);
-            window.addEventListener('mousemove', updateAnalogPosition, { passive: false });
-            document.addEventListener('mouseup', endAnalog);
-            
-            // Touch events
-            analogContainer.addEventListener('touchstart', startAnalog, { passive: false });
-            window.addEventListener('touchmove', updateAnalogPosition, { passive: false });
-            document.addEventListener('touchend', endAnalog);
+            // Remove pointer lock related code
+            document.removeEventListener('click', function() {
+                document.body.requestPointerLock();
+            });
 
             // Start auto-attack
-            setInterval(() => {
-                if (isGameStarted && !isGameOver) {
-                    shoot();
-                }
-            }, 1000 / powerupEffects.fireRateMultiplier);
+            setInterval(shoot, fireRate);
 
-            // Sprint button controls
-            const sprintButton = document.querySelector('.sprint-button');
-            
-            const startSprint = (e) => {
-                e.preventDefault();
-                if (!canSprint) return;
-                
-                isSprinting = true;
-                sprintButton.classList.add('active');
-            };
-            
-            const endSprint = (e) => {
-                e.preventDefault();
-                isSprinting = false;
-                sprintButton.classList.remove('active');
-            };
-            
-            // Mouse events for sprint button
-            sprintButton.addEventListener('mousedown', startSprint);
-            sprintButton.addEventListener('mouseup', endSprint);
-            sprintButton.addEventListener('mouseleave', endSprint);
-            
-            // Touch events for sprint button
-            sprintButton.addEventListener('touchstart', startSprint, { passive: false });
-            sprintButton.addEventListener('touchend', endSprint, { passive: false });
+            // Modify init() to add analog stick initialization
+            initAnalogStick();
         }
 
         function createSkybox() {
@@ -1470,16 +1307,17 @@
             const currentSpeed = baseSpeed * powerupEffects.speedMultiplier * sprintMultiplier;
             const nextPosition = playerHelicopter.position.clone();
 
-            // Use analog values for movement
-            if (analogStick.active) {
-                nextPosition.x += analogStick.moveX * currentSpeed;
-                nextPosition.z += analogStick.moveY * currentSpeed;
-                
-                // Optional: Make helicopter face movement direction
-                if (analogStick.moveX !== 0 || analogStick.moveY !== 0) {
-                    const angle = Math.atan2(analogStick.moveX, analogStick.moveY);
-                    playerHelicopter.rotation.y = angle;
-                }
+            if (moveForward) {
+                nextPosition.z -= currentSpeed;
+            }
+            if (moveBackward) {
+                nextPosition.z += currentSpeed;
+            }
+            if (moveLeft) {
+                nextPosition.x -= currentSpeed;
+            }
+            if (moveRight) {
+                nextPosition.x += currentSpeed;
             }
 
             // Check boundaries before applying movement
@@ -1487,6 +1325,7 @@
             nextPosition.x = Math.max(-HALF_BOARD + margin, Math.min(HALF_BOARD - margin, nextPosition.x));
             nextPosition.z = Math.max(-HALF_BOARD + margin, Math.min(HALF_BOARD - margin, nextPosition.z));
             
+            // Apply the bounded position
             playerHelicopter.position.copy(nextPosition);
 
             // Update camera to follow helicopter
@@ -1833,7 +1672,6 @@
         function onWindowResize() {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
@@ -3021,13 +2859,105 @@
         // Add after other global variables
         let analogStick = {
             active: false,
-            centerX: 0,
-            centerY: 0,
-            knobX: 0,
-            knobY: 0,
-            moveX: 0,
-            moveY: 0
+            center: { x: 0, y: 0 },
+            current: { x: 0, y: 0 },
+            container: null,
+            stick: null,
+            maxDistance: 0,
+            touchId: null
         };
+
+        // Modify init() function to add analog stick initialization
+        function initAnalogStick() {
+            analogStick.container = document.querySelector('.analog-container');
+            analogStick.stick = document.querySelector('.analog-stick');
+            analogStick.maxDistance = analogStick.container.offsetWidth / 3;
+
+            // Touch events
+            analogStick.container.addEventListener('touchstart', handleAnalogStart);
+            analogStick.container.addEventListener('touchmove', handleAnalogMove);
+            analogStick.container.addEventListener('touchend', handleAnalogEnd);
+            analogStick.container.addEventListener('touchcancel', handleAnalogEnd);
+
+            // Mouse events for testing
+            analogStick.container.addEventListener('mousedown', handleAnalogStart);
+            document.addEventListener('mousemove', handleAnalogMove);
+            document.addEventListener('mouseup', handleAnalogEnd);
+        }
+
+        function handleAnalogStart(e) {
+            e.preventDefault();
+            analogStick.active = true;
+
+            const containerRect = analogStick.container.getBoundingClientRect();
+            analogStick.center = {
+                x: containerRect.left + containerRect.width / 2,
+                y: containerRect.top + containerRect.height / 2
+            };
+
+            if (e.type === 'touchstart') {
+                analogStick.touchId = e.touches[0].identifier;
+                updateAnalogPosition(e.touches[0].clientX, e.touches[0].clientY);
+            } else {
+                updateAnalogPosition(e.clientX, e.clientY);
+            }
+        }
+
+        function handleAnalogMove(e) {
+            e.preventDefault();
+            if (!analogStick.active) return;
+
+            if (e.type === 'touchmove') {
+                const touch = Array.from(e.touches).find(t => t.identifier === analogStick.touchId);
+                if (touch) {
+                    updateAnalogPosition(touch.clientX, touch.clientY);
+                }
+            } else {
+                updateAnalogPosition(e.clientX, e.clientY);
+            }
+        }
+
+        function handleAnalogEnd(e) {
+            e.preventDefault();
+            analogStick.active = false;
+            analogStick.touchId = null;
+            analogStick.stick.style.transform = 'translate(-50%, -50%)';
+            moveForward = moveBackward = moveLeft = moveRight = false;
+        }
+
+        function updateAnalogPosition(x, y) {
+            const dx = x - analogStick.center.x;
+            const dy = y - analogStick.center.y;
+            const distance = Math.min(Math.sqrt(dx * dx + dy * dy), analogStick.maxDistance);
+            const angle = Math.atan2(dy, dx);
+
+            const moveX = distance * Math.cos(angle);
+            const moveY = distance * Math.sin(angle);
+
+            analogStick.stick.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
+
+            // Update movement flags based on analog position
+            const deadzone = 0.3;
+            const normalizedX = moveX / analogStick.maxDistance;
+            const normalizedY = moveY / analogStick.maxDistance;
+
+            moveLeft = normalizedX < -deadzone;
+            moveRight = normalizedX > deadzone;
+            moveForward = normalizedY < -deadzone;
+            moveBackward = normalizedY > deadzone;
+        }
+
+        // Modify updatePlayer() to use analog input for movement
+        function updatePlayer() {
+            // ... existing updatePlayer code ...
+
+            // Remove pointer lock check from startGame()
+            function startGame() {
+                // ... existing startGame code ...
+                // Remove this line:
+                // document.body.requestPointerLock();
+            }
+        }
     </script>
 </body>
 </html>
