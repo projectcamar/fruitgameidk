@@ -252,6 +252,8 @@
             align-items: center;
             z-index: 2000;
             pointer-events: auto;
+            background: rgba(2, 6, 23, 0.98);
+            backdrop-filter: blur(10px);
         }
 
         .game-title {
@@ -509,17 +511,17 @@
         </p>
         <div class="game-features">
             <div class="feature-card">
-                <div class="feature-icon">🚁</div>
+                <div class="feature-icon">??</div>
                 <div class="feature-title">Dynamic Combat</div>
                 <div class="feature-desc">Control your helicopter with precision in intense aerial battles</div>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">⚡</div>
+                <div class="feature-icon">?</div>
                 <div class="feature-title">Power-ups</div>
                 <div class="feature-desc">Collect upgrades to enhance your firepower and abilities</div>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">👑</div>
+                <div class="feature-icon">??</div>
                 <div class="feature-title">Boss Battles</div>
                 <div class="feature-desc">Face epic boss fights against giant mutant fruits</div>
             </div>
@@ -626,6 +628,7 @@
         // Initialize sound settings
         Object.values(SOUNDS).forEach(sound => {
             sound.volume = 0.3; // Set default volume to 30%
+            sound.preload = 'auto'; // Preload audio files
         });
 
         // Modify the playSound function to handle the explosion duration
@@ -725,6 +728,7 @@
         // Configure background music
         MUSIC.background.loop = true;
         MUSIC.background.volume = 0.3;
+        MUSIC.background.preload = 'auto';
 
         // Add after other global variables
         const rageMode = {
@@ -1008,10 +1012,6 @@
             document.addEventListener('mousedown', () => isMouseDown = true);
             document.addEventListener('mouseup', () => isMouseDown = false);
             document.addEventListener('mousemove', onMouseMove);
-            document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock;
-            document.addEventListener('click', function() {
-                document.body.requestPointerLock();
-            });
 
             // Window resize
             window.addEventListener('resize', onWindowResize);
@@ -1019,20 +1019,8 @@
             // Add visual boundaries
             addBoundaryWalls();
 
-            // Update mouse controls
-            document.addEventListener('mousedown', () => isMouseDown = true);
-            document.addEventListener('mouseup', () => isMouseDown = false);
-
             addGameOverStyles();
             addGameOverScreen();
-
-            // Setup background music
-            document.addEventListener('click', () => {
-                // Start music on first click (browser requirement)
-                if (MUSIC.background.paused) {
-                    MUSIC.background.play().catch(e => console.log("Music play failed:", e));
-                }
-            }, { once: true });
 
             // Start rage powerup spawn cycle
             spawnRagePowerup();
@@ -1041,11 +1029,6 @@
             animateCinematicCamera();
 
             createStartMenuFruits();
-
-            // Remove pointer lock related code
-            document.removeEventListener('click', function() {
-                document.body.requestPointerLock();
-            });
 
             // Start auto-attack
             setInterval(shoot, fireRate);
@@ -2834,10 +2817,17 @@
             // Start game animation
             animate();
             
-            // Start music
-            if (MUSIC.background.paused) {
-                MUSIC.background.play().catch(e => console.log("Music play failed:", e));
-            }
+            // Start music - force play with user interaction
+            MUSIC.background.currentTime = 0; // Reset to start
+            MUSIC.background.play().then(() => {
+                console.log("Background music started successfully");
+            }).catch(e => {
+                console.log("Music play failed:", e);
+                // Retry after a short delay
+                setTimeout(() => {
+                    MUSIC.background.play().catch(err => console.log("Music retry failed:", err));
+                }, 100);
+            });
             
             // Remove start menu fruits
             startMenuFruits.forEach(fruit => {
