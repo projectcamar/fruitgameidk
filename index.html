@@ -322,17 +322,21 @@
 
         .game-features {
             display: flex;
-            gap: 32px;
+            flex-wrap: wrap;
+            gap: 24px;
             margin-top: 48px;
+            justify-content: center;
+            max-width: 900px;
         }
 
         .feature-card {
             background: rgba(255, 255, 255, 0.05);
-            padding: 24px;
+            padding: 20px;
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
-            width: 200px;
+            width: 180px;
+            min-width: 160px;
             transition: all 0.3s ease;
         }
 
@@ -430,6 +434,34 @@
             .multiplier-container {
                 bottom: 200px;
             }
+            
+            .game-title {
+                font-size: 48px;
+                margin-bottom: 16px;
+            }
+            
+            .game-subtitle {
+                font-size: 16px;
+                margin-bottom: 24px;
+                padding: 0 20px;
+            }
+            
+            .game-features {
+                gap: 16px;
+                margin-top: 24px;
+                padding: 0 20px;
+            }
+            
+            .feature-card {
+                width: 100%;
+                max-width: 280px;
+                padding: 16px;
+            }
+            
+            .start-button {
+                padding: 16px 48px;
+                font-size: 18px;
+            }
         }
 
         /* Only hide on desktop with mouse */
@@ -509,17 +541,17 @@
         </p>
         <div class="game-features">
             <div class="feature-card">
-                <div class="feature-icon">🚁</div>
+                <div class="feature-icon">??</div>
                 <div class="feature-title">Dynamic Combat</div>
                 <div class="feature-desc">Control your helicopter with precision in intense aerial battles</div>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">⚡</div>
+                <div class="feature-icon">?</div>
                 <div class="feature-title">Power-ups</div>
                 <div class="feature-desc">Collect upgrades to enhance your firepower and abilities</div>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">👑</div>
+                <div class="feature-icon">??</div>
                 <div class="feature-title">Boss Battles</div>
                 <div class="feature-desc">Face epic boss fights against giant mutant fruits</div>
             </div>
@@ -905,8 +937,8 @@
             return isSprintActive ? 2.0 : 1.0;
         }
 
+        // Don't call animate() here - it will be called from startGame()
         init();
-        animate();
 
         function init() {
             // Scene setup
@@ -1002,16 +1034,20 @@
             createPowerup('MULTISHOT');
             createPowerup('DAMAGE');
 
-            // Controls
-            document.addEventListener('keydown', onKeyDown);
-            document.addEventListener('keyup', onKeyUp);
+            // Controls - keyboard events
+            document.addEventListener('keydown', onKeyDown, false);
+            document.addEventListener('keyup', onKeyUp, false);
+            
+            // Mouse events
             document.addEventListener('mousedown', () => isMouseDown = true);
             document.addEventListener('mouseup', () => isMouseDown = false);
             document.addEventListener('mousemove', onMouseMove);
-            document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock;
-            document.addEventListener('click', function() {
-                document.body.requestPointerLock();
-            });
+            
+            // Remove pointer lock - it can interfere with keyboard controls
+            // document.body.requestPointerLock = document.body.requestPointerLock || document.body.mozRequestPointerLock;
+            // document.addEventListener('click', function() {
+            //     document.body.requestPointerLock();
+            // });
 
             // Window resize
             window.addEventListener('resize', onWindowResize);
@@ -1026,13 +1062,8 @@
             addGameOverStyles();
             addGameOverScreen();
 
-            // Setup background music
-            document.addEventListener('click', () => {
-                // Start music on first click (browser requirement)
-                if (MUSIC.background.paused) {
-                    MUSIC.background.play().catch(e => console.log("Music play failed:", e));
-                }
-            }, { once: true });
+            // Setup background music - will be triggered by START GAME button
+            // Removed automatic click listener - music will start when game starts
 
             // Start rage powerup spawn cycle
             spawnRagePowerup();
@@ -1042,10 +1073,7 @@
 
             createStartMenuFruits();
 
-            // Remove pointer lock related code
-            document.removeEventListener('click', function() {
-                document.body.requestPointerLock();
-            });
+            // Pointer lock removed - no need to remove listeners
 
             // Start auto-attack
             setInterval(shoot, fireRate);
@@ -2834,9 +2862,21 @@
             // Start game animation
             animate();
             
-            // Start music
-            if (MUSIC.background.paused) {
-                MUSIC.background.play().catch(e => console.log("Music play failed:", e));
+            // Start music with better error handling
+            const musicPromise = MUSIC.background.play();
+            if (musicPromise !== undefined) {
+                musicPromise.then(() => {
+                    console.log('Music started successfully');
+                }).catch(e => {
+                    console.log("Music autoplay prevented by browser:", e);
+                    // Show a subtle notification that music is muted
+                    showNotification('?? Click anywhere to enable music', 3000);
+                    // Enable music on next click
+                    document.addEventListener('click', function enableMusic() {
+                        MUSIC.background.play();
+                        document.removeEventListener('click', enableMusic);
+                    }, { once: true });
+                });
             }
             
             // Remove start menu fruits
@@ -2948,17 +2988,8 @@
             moveBackward = normalizedY > deadzone;
         }
 
-        // Modify updatePlayer() to use analog input for movement
-        function updatePlayer() {
-            // ... existing updatePlayer code ...
-
-            // Remove pointer lock check from startGame()
-            function startGame() {
-                // ... existing startGame code ...
-                // Remove this line:
-                // document.body.requestPointerLock();
-            }
-        }
+        // updatePlayer() already updated above to use analog input for movement
+        // All fixes have been applied - WASD controls, UI responsiveness, and audio handling
     </script>
 </body>
 </html>
