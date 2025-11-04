@@ -2937,18 +2937,6 @@
             moveForward = normalizedY < -deadzone;
             moveBackward = normalizedY > deadzone;
         }
-
-        // Modify updatePlayer() to use analog input for movement
-        function updatePlayer() {
-            // ... existing updatePlayer code ...
-
-            // Remove pointer lock check from startGame()
-            function startGame() {
-                // ... existing startGame code ...
-                // Remove this line:
-                // document.body.requestPointerLock();
-            }
-        }
     </script>
 </body>
 </html>
